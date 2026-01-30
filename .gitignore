@@ -1,0 +1,15 @@
+# Dependencias de composer (si usas en el futuro)
+/vendor/
+
+# Archivos de entorno y configuración (IMPORTANTE: nunca subir contraseñas)
+config.php
+.env
+db_connect.php
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
