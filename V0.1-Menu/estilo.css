@@ -1,0 +1,148 @@
+/* =========================================
+   			ESTILO.CSS - TinoProp 
+   ========================================= */
+
+/* ## RESETEO BASICO ## */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ## LAYOUT PRINCIPAL ## */
+.contenedor_principal {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ## MENU LATERAL ## */
+.menu_lateral {
+    width: 260px;
+    background-color: #2c3e50; /* Azul Navy */
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #1a252f;
+}
+
+.menu_lateral h2 {
+    margin-bottom: 25px;
+    border-bottom: 2px solid #4ecdc4; /* Línea turquesa más gruesa */
+    padding-bottom: 15px;
+    font-size: 22px;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+/* ## GRUPOS Y TITULOS DE SECCION (CORREGIDO) ## */
+.grupo_menu {
+    margin-bottom: 30px;
+}
+
+.titulo_seccion {
+    font-size: 12px;
+    text-transform: uppercase;
+    
+    /* CAMBIO AQUI: Color blanco y negrita para que se lea bien */
+    color: #ffffff; 
+    font-weight: bold;
+    opacity: 0.9; 
+
+    margin-bottom: 12px;
+    border-bottom: 1px solid #7f8c8d; /* Línea separadora un poco más clara */
+    padding-bottom: 5px;
+    letter-spacing: 1.2px;
+}
+
+/* ## LISTAS Y ENLACES ## */
+.menu_lateral ul {
+    list-style: none;
+}
+
+.menu_lateral ul li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px; /* Un poco más pegados los items */
+}
+
+.menu_lateral ul li a {
+    text-decoration: none;
+    color: #bdc3c7;           /* Gris muy claro para los items normales */
+    display: block;
+    padding: 8px 0;
+    transition: 0.3s;
+    font-size: 14px;
+    flex-grow: 1;
+}
+
+.menu_lateral ul li a:hover {
+    color: #4ecdc4;           /* Turquesa al pasar el mouse */
+    padding-left: 5px;
+    font-weight: 500;
+}
+
+/* ## FAVORITOS (ESTRELLAS) ## */
+.btn_star {
+    cursor: pointer;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.2); /* Estrella apagada sutil */
+    padding-left: 10px;
+    transition: color 0.2s;
+}
+
+.btn_star:hover {
+    color: #f1c40f; /* Amarillo Oro al pasar el mouse */
+}
+
+/* ## TEXTO VACIO ## */
+.texto_vacio {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    padding: 5px 0;
+}
+
+/* ## CONTENIDO DERECHA ## */
+.contenido_derecha {
+    flex: 1;
+    background-color: #f4f6f7;
+    padding: 40px;
+}
+
+.contenido_derecha h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.contenido_derecha p {
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+/* ## TARJETAS ## */
+.tarjeta_info {
+    background: white;
+    padding: 25px;
+    margin-top: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border-left: 4px solid #3498db;
+}
+
+/* ## BOTON ELIMINAR (X) EN FAVORITOS ## */
+.btn_eliminar {
+    cursor: pointer;
+    color: #e74c3c; /* Rojo suave */
+    font-size: 14px;
+    margin-left: 10px;
+    font-weight: bold;
+    opacity: 0.8;
+}
+
+.btn_eliminar:hover {
+    opacity: 1;
+    color: #c0392b;
+}
