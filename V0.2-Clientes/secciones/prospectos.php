@@ -8,8 +8,6 @@ $columnas_kanban = [
     "nuevo" => "Nuevo",
     "contactado" => "Contactado",
     "no_contesta" => "No Contesta",
-    "vender" => "Vender",
-    "comprar" => "Comprar",
     "realizado" => "Realizado",
     "descartado" => "Descartado"
 ];
