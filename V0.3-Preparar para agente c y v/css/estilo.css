@@ -1,0 +1,493 @@
+/* =========================================
+   			ESTILO.CSS - TinoProp 
+   ========================================= */
+
+/* ## RESETEO BASICO ## */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ## LAYOUT PRINCIPAL ## */
+.contenedor_principal {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ## MENU LATERAL ## */
+.menu_lateral {
+    width: 260px;
+    background-color: #2c3e50; /* Azul Navy */
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #1a252f;
+    
+    height: 100vh;      /* Ocupa todo el alto */
+    flex-shrink: 0;     /* IMPORTANTE: Prohíbe que se achique aunque el contenido sea ancho */
+    overflow-y: auto;   /* Si el menú es muy largo, tendrá su propio scroll */
+}
+
+.menu_lateral h2 {
+    margin-bottom: 25px;
+    border-bottom: 2px solid #4ecdc4; /* Línea turquesa más gruesa */
+    padding-bottom: 15px;
+    font-size: 22px;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+/* ## GRUPOS Y TITULOS DE SECCION (CORREGIDO) ## */
+.grupo_menu {
+    margin-bottom: 30px;
+}
+
+.titulo_seccion {
+    font-size: 12px;
+    text-transform: uppercase;
+    
+    /* CAMBIO AQUI: Color blanco y negrita para que se lea bien */
+    color: #ffffff; 
+    font-weight: bold;
+    opacity: 0.9; 
+
+    margin-bottom: 12px;
+    border-bottom: 1px solid #7f8c8d; /* Línea separadora un poco más clara */
+    padding-bottom: 5px;
+    letter-spacing: 1.2px;
+}
+
+/* ## LISTAS Y ENLACES ## */
+.menu_lateral ul {
+    list-style: none;
+}
+
+.menu_lateral ul li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px; /* Un poco más pegados los items */
+}
+
+.menu_lateral ul li a {
+    text-decoration: none;
+    color: #bdc3c7;           /* Gris muy claro para los items normales */
+    display: block;
+    padding: 8px 0;
+    transition: 0.3s;
+    font-size: 14px;
+    flex-grow: 1;
+}
+
+.menu_lateral ul li a:hover {
+    color: #4ecdc4;           /* Turquesa al pasar el mouse */
+    padding-left: 5px;
+    font-weight: 500;
+}
+
+/* ## FAVORITOS (ESTRELLAS) ## */
+.btn_star {
+    cursor: pointer;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.2); /* Estrella apagada sutil */
+    padding-left: 10px;
+    transition: color 0.2s;
+}
+
+.btn_star:hover {
+    color: #f1c40f; /* Amarillo Oro al pasar el mouse */
+}
+
+/* ## TEXTO VACIO ## */
+.texto_vacio {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    padding: 5px 0;
+}
+
+/* ## CONTENIDO DERECHA ## */
+.contenido_derecha {
+    flex: 1;
+    background-color: #f4f6f7;
+    padding: 40px;
+    
+    height: 100vh;    /* Ocupa todo el alto */
+    overflow: auto;   /* Genera scroll (vertical y horizontal) SOLO aquí dentro */
+}
+
+.contenido_derecha h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.contenido_derecha p {
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+/* ## TARJETAS ## */
+.tarjeta_info {
+    background: white;
+    padding: 25px;
+    margin-top: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border-left: 4px solid #3498db;
+}
+
+/* ## BOTON ELIMINAR (X) EN FAVORITOS ## */
+.btn_eliminar {
+    cursor: pointer;
+    color: #e74c3c; /* Rojo suave */
+    font-size: 14px;
+    margin-left: 10px;
+    font-weight: bold;
+    opacity: 0.8;
+}
+
+.btn_eliminar:hover {
+    opacity: 1;
+    color: #c0392b;
+}
+
+/* =========================================
+   ESTILOS NUEVOS: TABLAS Y BOTONES
+   ========================================= */
+
+.encabezado_seccion {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.encabezado_seccion h2 {
+    color: #2c3e50;
+    border-bottom: none; /* Quitamos el borde del h2 global si molesta aquí */
+}
+
+/* Botón Nuevo Cliente */
+.btn_nuevo_cliente {
+    background-color: #27ae60;
+    color: white;
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Contenedor de la Tabla */
+.contenedor_tabla {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow: hidden; /* Para recortar bordes */
+}
+
+.tabla_datos {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.tabla_datos th {
+    background-color: #34495e;
+    color: white;
+    text-align: left;
+    padding: 15px;
+    font-size: 14px;
+}
+
+.tabla_datos td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    color: #555;
+    font-size: 14px;
+}
+
+.tabla_datos tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Botón Ver Más */
+.btn_ver_mas {
+    text-decoration: none;
+    color: #3498db;
+    font-weight: bold;
+    font-size: 13px;
+    padding: 5px 10px;
+    border: 1px solid #3498db;
+    border-radius: 15px;
+    transition: all 0.2s;
+}
+
+.btn_ver_mas:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+/* =========================================
+   ESTILOS FICHA CLIENTE (VER_CLIENTE)
+   ========================================= */
+
+.encabezado_detalle {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.btn_volver {
+    text-decoration: none;
+    color: #7f8c8d;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.tarjeta_ficha {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-top: 4px solid #4ecdc4; /* Detalle turquesa arriba */
+}
+
+.grid_datos {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dos columnas */
+    gap: 25px;
+}
+
+/* Para que dirección o notas ocupen todo el ancho */
+.full_width {
+    grid-column: span 2;
+}
+
+.campo_dato label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #95a5a6;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Contenedor del input y el lápiz */
+.input_con_lapiz {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #eee; /* Línea suave abajo */
+    padding-bottom: 5px;
+    transition: 0.3s;
+}
+
+/* El INPUT cuando está en modo lectura (ReadOnly) */
+.input_con_lapiz input {
+    flex-grow: 1;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    color: #2c3e50;
+    font-weight: 500;
+    outline: none; /* Quitamos el borde azul por defecto */
+    padding: 5px;
+}
+
+/* El INPUT cuando se está editando (Clase añadida por JS o focus) */
+.input_con_lapiz input:focus, 
+.input_con_lapiz input.editando {
+    background-color: #f0f8ff; /* Azulito muy claro de fondo */
+    border-bottom: 2px solid #3498db; /* Borde azul abajo */
+}
+
+/* El LAPIZ */
+.lapiz_editar {
+    cursor: pointer;
+    font-size: 18px;
+    color: #bdc3c7;
+    margin-left: 10px;
+    transition: 0.2s;
+}
+
+.lapiz_editar:hover {
+    color: #3498db; /* Azul al pasar el mouse */
+    transform: scale(1.1); /* Crece un poquito */
+}
+
+/* Botón Guardar */
+.area_botones {
+    margin-top: 30px;
+    text-align: right;
+}
+
+.btn_guardar {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.btn_guardar:hover {
+    background-color: #34495e;
+}
+
+/* =========================================
+   ESTILOS KANBAN PROSPECTOS
+   ========================================= */
+
+/* Contenedor principal con Scroll Horizontal */
+.kanban_contenedor {
+    display: flex;
+    overflow-x: auto; /* Permite scroll lateral */
+    padding-bottom: 20px; /* Espacio para la barra de scroll */
+    gap: 15px; /* Espacio entre columnas */
+    align-items: flex-start; /* Alinea columnas arriba */
+    height: calc(100vh - 150px); /* Ocupa el alto disponible */
+}
+
+/* Estilo de la barra de scroll (Opcional, para Webkit/Chrome) */
+.kanban_contenedor::-webkit-scrollbar {
+    height: 10px;
+}
+.kanban_contenedor::-webkit-scrollbar-thumb {
+    background: #bdc3c7;
+    border-radius: 5px;
+}
+
+/* COLUMNA INDIVIDUAL */
+.kanban_columna {
+    min-width: 260px; /* Ancho fijo para que no se aplasten */
+    width: 260px;
+    background-color: #ecf0f1; /* Gris muy clarito de fondo */
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%; /* Para que el scroll interno funcione */
+}
+
+/* Cabecera de Columna */
+.kanban_header {
+    padding: 12px 15px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.kanban_header h3 { font-size: 12px; margin: 0; }
+.contador { background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+
+/* COLORES POR ESTADO */
+.kanban_header.nuevo { background-color: #3498db; }       /* Azul */
+.kanban_header.contactado { background-color: #f39c12; }  /* Naranja */
+.kanban_header.no_contesta { background-color: #95a5a6; } /* Gris */
+.kanban_header.vender { background-color: #9b59b6; }      /* Morado */
+.kanban_header.comprar { background-color: #1abc9c; }     /* Turquesa */
+.kanban_header.realizado { background-color: #27ae60; }   /* Verde */
+.kanban_header.descartado { background-color: #c0392b; }  /* Rojo */
+
+/* CUERPO DE LA COLUMNA (Donde van las tarjetas) */
+.kanban_body {
+    padding: 10px;
+    overflow-y: auto; /* Scroll vertical dentro de la columna si hay muchas */
+    flex-grow: 1;
+}
+
+/* TARJETA DE PROSPECTO */
+.tarjeta_prospecto {
+    background: white;
+    padding: 12px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 10px;
+    border-left: 3px solid transparent;
+    transition: transform 0.2s;
+    cursor: grab;
+}
+
+.tarjeta_prospecto:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.tarjeta_prospecto h4 {
+    font-size: 14px;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.tarjeta_prospecto .interes {
+    font-size: 12px;
+    color: #7f8c8d;
+    font-style: italic;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.datos_contacto {
+    font-size: 11px;
+    color: #34495e;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.acciones_tarjeta {
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+.acciones_tarjeta button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #bdc3c7;
+    transition: 0.2s;
+}
+
+.acciones_tarjeta button:hover {
+    color: #3498db;
+}
+body {
+    height: 100vh; /* Altura del 100% de la ventana */
+    overflow: hidden; /* OCULTA la barra de scroll del navegador */
+}
+
+/* ## ESTILOS DRAG & DROP ## */
+
+/* Clase que se añade al elemento mientras lo arrastras */
+.tarjeta_prospecto.arrastrando {
+    opacity: 0.4;
+    border: 2px dashed #3498db;
+}
+
+/* Clase para resaltar la columna destino */
+.kanban_body.zona_activa {
+    background-color: #d5dbdb; /* Un gris un poco más oscuro */
+    border: 2px dashed #95a5a6;
+}
+
+/* Cursor de agarre */
+.tarjeta_prospecto {
+    cursor: grab; 
+}
+
+.tarjeta_prospecto:active {
+    cursor: grabbing;
+}
