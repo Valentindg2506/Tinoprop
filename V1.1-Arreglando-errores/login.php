@@ -62,7 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button class="btn_guardar" type="submit">Entrar</button>
             </form>
 
-            <a class="login_link" href="index.php">Volver al CRM</a>
         </section>
     </main>
 </body>

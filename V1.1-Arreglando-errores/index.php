@@ -37,7 +37,11 @@ require_once __DIR__ . '/inc/bootstrap.php';
 			<h3 class="titulo_seccion">Dashboard</h3>
 			<ul>
 				<li>
-					<a href="?seccion=dashboard">Resumen</a>
+					<a href="?seccion=dashboard">Inicio</a>
+					<span class="btn_star" onclick="toggle_favorito('Dashboard')">☆</span>
+				</li>
+				<li>
+					<a href="#">Recordatorios</a>
 					<span class="btn_star" onclick="toggle_favorito('Dashboard')">☆</span>
 				</li>
 			</ul>
