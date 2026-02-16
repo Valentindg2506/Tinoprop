@@ -110,7 +110,6 @@ require_once __DIR__ . '/inc/bootstrap.php';
 		<div class="grupo_menu">
 			<h3 class="titulo_seccion">Sistema</h3>
 			<ul>
-				<li><a href="login.php">Iniciar Sesión</a></li>
 				<li><a href="logout.php">Cerrar Sesión</a></li>
 			</ul>
 		</div>
