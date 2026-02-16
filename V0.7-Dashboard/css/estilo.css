@@ -60,6 +60,10 @@
     letter-spacing: 1.2px;
 }
 
+.titulo_seccion--favoritos {
+    color: #f1c40f;
+}
+
 /* ## LISTAS Y ENLACES ## */
 .menu_lateral ul {
     list-style: none;
@@ -179,6 +183,9 @@
     border-radius: 5px;
     font-weight: bold;
     font-size: 14px;
+    display: inline-block;
+    border: none;
+    cursor: pointer;
 }
 
 /* Contenedor de la Tabla */
@@ -224,11 +231,139 @@
     border: 1px solid #3498db;
     border-radius: 15px;
     transition: all 0.2s;
+    background: transparent;
+    cursor: pointer;
 }
 
 .btn_ver_mas:hover {
     background-color: #3498db;
     color: white;
+}
+
+/* =========================================
+   ESTILOS INMUEBLES (TARJETAS)
+   ========================================= */
+
+.grid_cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.card_propiedad {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.card_media {
+    position: relative;
+    background: linear-gradient(135deg, #dfe9f3, #f7f9fb);
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card_media_placeholder {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2c3e50;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card_tag {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #2c3e50;
+    color: #ffffff;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.card_tag--alquiler {
+    background: #16a085;
+}
+
+.card_body {
+    padding: 16px 18px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.card_body h3 {
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.card_meta {
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.card_precios {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.card_precio {
+    font-size: 16px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.badge_estado {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.badge_estado--disponible {
+    background: #e8f8f2;
+    color: #1e8449;
+}
+
+.badge_estado--reservado {
+    background: #fef5e7;
+    color: #b9770e;
+}
+
+.badge_estado--vendido {
+    background: #fdecea;
+    color: #c0392b;
+}
+
+.card_footer {
+    padding: 0 18px 18px;
+    margin-top: auto;
+}
+
+@media (max-width: 1200px) {
+    .grid_cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .grid_cards {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* =========================================
@@ -255,6 +390,138 @@
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     border-top: 4px solid #4ecdc4; /* Detalle turquesa arriba */
+}
+
+.tarjeta_ficha--compacta {
+    padding: 25px;
+}
+
+.detalle_layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+    align-items: start;
+}
+
+.detalle_col {
+    min-width: 0;
+}
+
+.panel_notas {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-top: 4px solid #3498db;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.panel_header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.panel_header h3 {
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.panel_hint {
+    color: #95a5a6;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.lista_notas {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.nota_item {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #f6f9fb;
+    border: 1px solid #edf1f5;
+}
+
+.nota_meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.nota_tipo {
+    color: #3498db;
+    font-weight: bold;
+}
+
+.nota_item p {
+    color: #2c3e50;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.campo_nota label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #95a5a6;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.campo_nota textarea {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #dfe6e9;
+    padding: 10px 12px;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+    color: #2c3e50;
+}
+
+.campo_nota select {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #dfe6e9;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: #fff;
+    font-family: inherit;
+    color: #2c3e50;
+}
+
+.campo_nota textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.campo_nota select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+.area_botones--notas {
+    text-align: left;
+}
+
+@media (max-width: 1024px) {
+    .detalle_layout {
+        grid-template-columns: 1fr;
+    }
 }
 
 .grid_datos {
@@ -341,6 +608,222 @@
 }
 
 /* =========================================
+   ESTILOS DASHBOARD
+   ========================================= */
+
+.barra_filtros {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    gap: 16px;
+    background: #ffffff;
+    padding: 16px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+    align-items: end;
+}
+
+.filtro_item label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #95a5a6;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.filtro_item select {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #dfe6e9;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: #fff;
+    font-family: inherit;
+    color: #2c3e50;
+}
+
+.dashboard_kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.kpi_card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.kpi_title {
+    text-transform: uppercase;
+    font-size: 12px;
+    color: #95a5a6;
+    letter-spacing: 0.6px;
+}
+
+.kpi_value {
+    font-size: 24px;
+    color: #2c3e50;
+}
+
+.kpi_detail {
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.dashboard_grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.panel_panel {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.embudo_lista {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.embudo_item {
+    display: grid;
+    grid-template-columns: 90px 1fr 50px;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.embudo_barra {
+    height: 10px;
+    background: #eef2f5;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.embudo_barra span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+}
+
+.embudo_valor {
+    text-align: right;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.lista_alertas,
+.lista_actividad {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lista_alertas li {
+    background: #f9f7f2;
+    border: 1px solid #f3e6c8;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lista_alertas strong {
+    color: #b9770e;
+}
+
+.lista_alertas span {
+    color: #7f8c8d;
+    font-size: 13px;
+}
+
+.lista_actividad li {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.actividad_hora {
+    background: #ecf0f1;
+    color: #2c3e50;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    min-width: 52px;
+    text-align: center;
+}
+
+.actividad_texto {
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.mini_cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.mini_card {
+    border: 1px solid #ecf0f1;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mini_card span {
+    color: #7f8c8d;
+    font-size: 13px;
+}
+
+.mini_card .btn_ver_mas {
+    align-self: flex-start;
+}
+
+@media (max-width: 1200px) {
+    .barra_filtros {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    }
+
+    .dashboard_kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mini_cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .barra_filtros {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard_grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================
    ESTILOS KANBAN PROSPECTOS
    ========================================= */
 
@@ -398,6 +881,8 @@
 .kanban_header.no_contesta { background-color: #95a5a6; } /* Gris */
 .kanban_header.vender { background-color: #9b59b6; }      /* Morado */
 .kanban_header.comprar { background-color: #1abc9c; }     /* Turquesa */
+.kanban_header.realizado { background-color: #2ecc71; }   /* Verde */
+.kanban_header.descartado { background-color: #e74c3c; }  /* Rojo */
 .kanban_header.realizado { background-color: #27ae60; }   /* Verde */
 .kanban_header.descartado { background-color: #c0392b; }  /* Rojo */
 

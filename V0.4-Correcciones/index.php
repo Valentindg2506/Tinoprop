@@ -24,11 +24,11 @@
 		<h2>🏠️ TinoProp</h2>
 		
 		<div class="grupo_menu">
-            <h3 class="titulo_seccion" style="color: gold;">★ Favoritos</h3>
-            <ul id="lista_favoritos_menu">
-                <li class="texto_vacio">Marca una estrella...</li>
-            </ul>
-        </div>
+			<h3 class="titulo_seccion titulo_seccion--favoritos">★ Favoritos</h3>
+			<ul id="lista_favoritos_menu">
+				<li class="texto_vacio">Marca una estrella...</li>
+			</ul>
+		</div>
         
 		<div class="grupo_menu">
 			<h3 class="titulo_seccion">Gestión Clientes - Vendedor</h3>
@@ -105,18 +105,16 @@
 		</nav>
 		<main class="contenido_derecha">
 		<?php
-			// Capturamos qué sección quiere ver el usuario
-			// Si no hay ninguna, mostramos 'inicio' (puedes crear inicio.php con la bienvenida)
+			// Seccion actual: si no llega ninguna, se muestra la bienvenida.
 			$seccion = isset($_GET['seccion']) ? $_GET['seccion'] : 'bienvenida';
 
-			// Definimos la ruta del archivo
+			// Ruta segura del archivo de contenido.
 			$archivo = "secciones/" . $seccion . ".php";
 
-			// Si el archivo existe, lo mostramos. Si no, mostramos la Bienvenida por defecto
+			// Renderiza la seccion si existe, o la bienvenida por defecto.
 			if (file_exists($archivo)) {
 				include $archivo;
 			} else {
-			// Aquí puedes dejar tu HTML de bienvenida original
 				echo '<h1>Bienvenido a TinoProp</h1>';
 				echo '<p>Selecciona una opción del menú para comenzar a trabajar.</p>';
 				echo '<div class="tarjeta_info"><p>Sistema listo para usar.</p></div>';

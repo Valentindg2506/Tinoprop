@@ -60,6 +60,10 @@
     letter-spacing: 1.2px;
 }
 
+.titulo_seccion--favoritos {
+    color: #f1c40f;
+}
+
 /* ## LISTAS Y ENLACES ## */
 .menu_lateral ul {
     list-style: none;
@@ -179,6 +183,9 @@
     border-radius: 5px;
     font-weight: bold;
     font-size: 14px;
+    display: inline-block;
+    border: none;
+    cursor: pointer;
 }
 
 /* Contenedor de la Tabla */
@@ -224,6 +231,8 @@
     border: 1px solid #3498db;
     border-radius: 15px;
     transition: all 0.2s;
+    background: transparent;
+    cursor: pointer;
 }
 
 .btn_ver_mas:hover {
@@ -398,6 +407,8 @@
 .kanban_header.no_contesta { background-color: #95a5a6; } /* Gris */
 .kanban_header.vender { background-color: #9b59b6; }      /* Morado */
 .kanban_header.comprar { background-color: #1abc9c; }     /* Turquesa */
+.kanban_header.realizado { background-color: #2ecc71; }   /* Verde */
+.kanban_header.descartado { background-color: #e74c3c; }  /* Rojo */
 .kanban_header.realizado { background-color: #27ae60; }   /* Verde */
 .kanban_header.descartado { background-color: #c0392b; }  /* Rojo */
 
