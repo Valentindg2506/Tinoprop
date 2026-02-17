@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tinoprop - El CRM Inmobiliario Todo en Uno</title>
+    <style>
+        :root {
+            --primary: #2563eb; /* Azul */
+            --secondary: #f97316; /* Naranja */
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            line-height: 1.6;
+            color: var(--dark);
+        }
+
+        /* Header */
+        header {
+            background: white;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .logo span {
+            color: var(--secondary);
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--dark);
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        .btn-cta {
+            background: var(--secondary);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.3s;
+        }
+
+        .btn-cta:hover {
+            transform: scale(1.05);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 8rem 5% 4rem;
+            background: linear-gradient(135deg, #eff6ff 0%, #fff 100%);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .hero h1 span {
+            color: var(--primary);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #64748b;
+            max-width: 700px;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Features */
+        .features {
+            padding: 5rem 5%;
+            background: white;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            padding: 2rem;
+            border-radius: 15px;
+            background: var(--light);
+            transition: transform 0.3s;
+            border: 1px solid #e2e8f0;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+        }
+
+        .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        /* Value Prop */
+        .value-prop {
+            padding: 5rem 5%;
+            background: var(--dark);
+            color: white;
+            text-align: center;
+        }
+
+        .value-prop h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .stat-item h4 {
+            font-size: 3rem;
+            color: var(--secondary);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            background: #0f172a;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            nav { display: none; } /* Simplificado para el ejemplo */
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Tino<span>Prop</span></div>
+        <nav>
+            <a href="#funcionalidades">Funcionalidades</a>
+            <a href="#precios">Precios</a>
+            <a href="#" class="btn-cta">Probar Demo</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>Gestiona tu inmobiliaria<br><span>Sin salir de la App</span></h1>
+        <p>Olvídate de Word, Excel y navegar por mil portales. Tinoprop unifica CRM, búsqueda de mercado y generación de contratos en una sola herramienta.</p>
+        <a href="#" class="btn-cta">Empezar ahora gratis</a>
+    </section>
+
+    <section class="features" id="funcionalidades">
+        <div class="feature-card">
+            <div class="icon">📊</div>
+            <h3>CRM Visual Kanban</h3>
+            <p>Mueve a tus clientes desde "Nuevo" hasta "Compró" arrastrando tarjetas. Visualiza tu embudo de ventas al instante y no pierdas ninguna oportunidad.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="icon">🔎</div>
+            <h3>Buscador Inteligente</h3>
+            <p>¿Buscas captar? Nuestro scraper rastrea los principales portales de España y te muestra las oportunidades de negocio sin que tengas que abrir otras webs.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="icon">📄</div>
+            <h3>Adiós al Word</h3>
+            <p>Genera contratos de arras, reserva y notas de encargo en PDF con un solo clic. Datos rellenados automáticamente y sin errores humanos.</p>
+        </div>
+    </section>
+
+    <section class="value-prop">
+        <h2>¿Por qué elegir Tinoprop?</h2>
+        <div class="stats-container">
+            <div class="stat-item">
+                <h4>-40%</h4>
+                <p>Tiempo administrativo</p>
+            </div>
+            <div class="stat-item">
+                <h4>100%</h4>
+                <p>Control legal</p>
+            </div>
+            <div class="stat-item">
+                <h4>24/7</h4>
+                <p>Monitorización de mercado</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2026 Tinoprop Solutions - Valencia, España. Proyecto desarrollado por Valentín Antonio De Gennaro.</p>
+    </footer>
+
+</body>
+</html>
