@@ -10,9 +10,6 @@ $origen = $_GET['origen'] ?? 'propiedades-vendedor';
 $mensaje_error = flash_get('error');
 $mensaje_exito = flash_get('success');
 
-// Inicializar tabla de imágenes
-imagenes_asegurar_tabla($pdo);
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id_propiedad > 0) {
     if (isset($_POST['guardar_cambios'])) {
         $errores = [];
@@ -152,10 +149,6 @@ $stmt = $pdo->prepare(
 );
 $stmt->execute(['id' => $id_propiedad]);
 $notas_propiedad = $stmt->fetchAll();
-
-// Cargar imágenes
-$imagenes_propiedad = imagenes_obtener_propiedad($pdo, $id_propiedad);
-$imagen_principal = imagen_obtener_principal($pdo, $id_propiedad);
 ?>
 
 <div class="encabezado_detalle">
@@ -163,42 +156,7 @@ $imagen_principal = imagen_obtener_principal($pdo, $id_propiedad);
     <h2>Detalle de Propiedad</h2>
 </div>
 
-<form action="" method="POST" enctype="multipart/form-data">
-    <!-- GALERÍA DE IMÁGENES -->
-    <div class="galeria_seccion">
-        <div class="galeria_contenedor">
-            <!-- Imagen Principal -->
-            <div class="galeria_principal">
-                <?php if ($imagen_principal): ?>
-                    <img src="<?php echo e($imagen_principal['ruta_archivo']); ?>" alt="<?php echo e($imagen_principal['nombre_original']); ?>">
-                <?php else: ?>
-                    <div class="imagen_placeholder">
-                        <p>📷 Sin imagen</p>
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <!-- Miniaturas -->
-            <?php if (!empty($imagenes_propiedad)): ?>
-                <div class="galeria_miniaturas">
-                    <?php foreach ($imagenes_propiedad as $img): ?>
-                        <div class="miniatura_item <?php echo $img['es_principal'] ? 'activa' : ''; ?>">
-                            <img src="<?php echo e($img['ruta_archivo']); ?>" alt="">
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-
-            <!-- Zona de carga -->
-            <div class="carga_imagenes">
-                <div class="area_drop" id="areaDrop">
-                    <p>📤 Arrastra imágenes aquí o <a href="#" onclick="document.getElementById('inputImagenes').click(); return false;">haz clic</a></p>
-                    <input type="file" id="inputImagenes" name="imagenes[]" multiple accept="image/*" style="display: none;">
-                </div>
-            </div>
-        </div>
-    </div>
-
+<form action="" method="POST">
     <div class="detalle_layout">
         <div class="detalle_col detalle_col--info">
             <div class="tarjeta_ficha tarjeta_ficha--compacta">
@@ -360,90 +318,5 @@ function activarEdicion(idCampo) {
     input.removeAttribute('readonly');
     input.focus();
     input.classList.add('editando');
-}
-
-// GALERÍA DE IMÁGENES
-const areaDrop = document.getElementById('areaDrop');
-if (areaDrop) {
-    // Eventos drag-drop
-    areaDrop.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        areaDrop.style.backgroundColor = '#f0f0f0';
-    });
-
-    areaDrop.addEventListener('dragleave', () => {
-        areaDrop.style.backgroundColor = '';
-    });
-
-    areaDrop.addEventListener('drop', (e) => {
-        e.preventDefault();
-        areaDrop.style.backgroundColor = '';
-        const archivos = e.dataTransfer.files;
-        subirImagenes(archivos);
-    });
-
-    // Evento del input file
-    const inputImagenes = document.getElementById('inputImagenes');
-    if (inputImagenes) {
-        inputImagenes.addEventListener('change', (e) => {
-            subirImagenes(e.target.files);
-        });
-    }
-}
-
-// Miniaturas clickeables
-const miniaturas = document.querySelectorAll('.miniatura_item img');
-miniaturas.forEach((img, index) => {
-    img.addEventListener('click', () => {
-        console.log('Click en miniatura', index);
-        // Cambiar imagen principal
-        const principal = document.querySelector('.galeria_principal img');
-        if (principal) {
-            principal.src = img.src;
-        }
-    });
-});
-
-// Función para subir imágenes
-function subirImagenes(archivos) {
-    const propiedadId = <?php echo (int) $_GET['propiedad'] ?? 0; ?>;
-    
-    if (!propiedadId) {
-        alert('Propiedad inválida');
-        return;
-    }
-
-    // Mostrar carga
-    const areaDrop = document.getElementById('areaDrop');
-    areaDrop.innerHTML = '<p>⏳ Cargando...</p>';
-
-    const formData = new FormData();
-    formData.append('propiedad_id', propiedadId);
-    
-    for (let archivo of archivos) {
-        if (archivo.type.startsWith('image/')) {
-            formData.append('imagenes[]', archivo);
-        }
-    }
-
-    fetch('/api/imagenes.php?action=subir', {
-        method: 'POST',
-        body: formData
-    })
-    .then(resp => resp.json())
-    .then(data => {
-        if (data.exito) {
-            // Recargar la página
-            location.reload();
-        } else {
-            alert('Error: ' + (data.error || 'Error desconocido'));
-            areaDrop.innerHTML = '<p>📤 Arrastra imágenes aquí o <a href="#" onclick="document.getElementById(\'inputImagenes\').click(); return false;">haz clic</a></p>';
-        }
-    })
-    .catch(err => {
-        console.error('Error:', err);
-        alert('Error al subir imágenes');
-        areaDrop.innerHTML = '<p>📤 Arrastra imágenes aquí o <a href="#" onclick="document.getElementById(\'inputImagenes\').click(); return false;">haz clic</a></p>';
-    });
 }
 </script>

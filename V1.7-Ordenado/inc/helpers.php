@@ -366,7 +366,7 @@ function imagen_subir(PDO $pdo, int $propiedad_id, array $archivo): ?int
     }
 
     // Crear directorio si no existe
-    $dir_imagenes = __DIR__ . '/../uploads/propiedades';
+    $dir_imagenes = __DIR__ . '/../storage/uploads/propiedades';
     if (!is_dir($dir_imagenes)) {
         mkdir($dir_imagenes, 0755, true);
     }
@@ -391,7 +391,7 @@ function imagen_subir(PDO $pdo, int $propiedad_id, array $archivo): ?int
         'propiedad_id' => $propiedad_id,
         'nombre_archivo' => $nombre_archivo,
         'nombre_original' => $archivo['name'] ?? '',
-        'ruta_archivo' => '/uploads/propiedades/' . $nombre_archivo,
+        'ruta_archivo' => '/storage/uploads/propiedades/' . $nombre_archivo,
     ]);
 
     return $resultado ? (int) $pdo->lastInsertId() : null;
