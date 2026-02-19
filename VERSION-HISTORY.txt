@@ -1,0 +1,162 @@
+╔════════════════════════════════════════════════════════════════════╗
+║                    TINOPROP - HISTORIAL DE VERSIONES              ║
+╚════════════════════════════════════════════════════════════════════╝
+
+V1.5-RECORDATORIOS (2024)
+═══════════════════════════════════════════════════════════════════
+✨ NUEVA: Sistema de recordatorios con calendario
+
+CARACTERÍSTICAS:
+  ✓ Calendario interactivo (navegación mes/año)
+  ✓ CRUD de recordatorios (crear, leer, editar, eliminar)
+  ✓ Base de datos automática (tabla recordatorios)
+  ✓ API JSON completa
+  ✓ 6 tipos de recordatorio
+  ✓ Estados visuales (pendiente/completado/cancelado)
+  ✓ Persistencia por usuario
+  ✓ Interfaz responsiva
+
+ARCHIVOS:
+  • secciones/recordatorios.php  - Interfaz principal
+  • api/recordatorios.php        - API CRUD
+  • Documentación completa (4 guías)
+
+LÍNEAS: 767
+FUNCIONES: +7
+ESTILOS: +400 líneas
+
+STATE: ✅ PRODUCCIÓN
+───────────────────────────────────────────────────────────────────
+
+V1.4-MEJORAS-ORDEN (2024)
+═══════════════════════════════════════════════════════════════════
+✨ Persistencia de orden en BD + reset + edición visual
+
+CARACTERÍSTICAS:
+  ✓ Guardar orden de kanban y dashboard en BD
+  ✓ Botón "Restablecer orden" para resetear
+  ✓ Botón "Editar orden" para activar modo
+  ✓ Visual de estado (✅ Orden guardado)
+  ✓ Por usuario
+
+MODIFICADOS:
+  • helpers.php      - Funciones preferencias_usuario
+  • dashboard.php    - Endpoints AJAX
+  • prospectos-*.php - Botón "Editar orden"
+  • script.js        - Integración con BD
+  • estilo.css       - Estilos estado
+
+STATE: ✅ PRODUCCIÓN
+───────────────────────────────────────────────────────────────────
+
+V1.3-PERSONALIZAR-INICIO (2024)
+═══════════════════════════════════════════════════════════════════
+✨ Reordenamiento de dashboard con drag-and-drop
+
+CARACTERÍSTICAS:
+  ✓ Arrastrar KPIs del dashboard
+  ✓ Botón "Editar orden" para activar modo
+  ✓ Persistencia en localStorage
+  ✓ Tarjetas reordenables
+
+MODIFICADOS:
+  • dashboard.php - CRUD de orden
+  • script.js     - Drag-drop logic
+  • estilo.css    - Placeholder styles
+
+STATE: ✅ PRODUCCIÓN
+───────────────────────────────────────────────────────────────────
+
+V1.2-DRAG-AND-DROP (2024)
+═══════════════════════════════════════════════════════════════════
+✨ Drag-and-drop en kanban con persistencia
+
+CARACTERÍSTICAS:
+  ✓ Arrastrar tarjetas entre columnas
+  ✓ Movimiento bidireccional (left/right)
+  ✓ Persistencia en BD
+  ✓ Sin tremor de interface
+
+CREADOS:
+  • script.js - Lógica drag-drop
+
+MODIFICADOS:
+  • secciones/* - Atributos draggable
+  • api/* - Endpoints de movimiento
+
+STATE: ✅ PRODUCCIÓN
+───────────────────────────────────────────────────────────────────
+
+V1.1-BASE (2024)
+═══════════════════════════════════════════════════════════════════
+✨ Sistema CRM base
+
+CARACTERÍSTICAS:
+  ✓ Gestión de clientes (vendedor/comprador)
+  ✓ Gestión de prospectos
+  ✓ Gestión de propiedades
+  ✓ Alquileres
+  ✓ Dashboard con KPIs
+  ✓ Menú lateral
+  ✓ Kanban simple
+
+STATE: ✅ PRODUCCIÓN
+───────────────────────────────────────────────────────────────────
+
+ROADMAP FUTURO
+═══════════════════════════════════════════════════════════════════
+
+V1.6 (Propuesto)
+  • Notificaciones push para recordatorios
+  • Email digest de tareas pendientes
+  • Recurrencia de recordatorios
+
+V1.7 (Propuesto)
+  • Reportes de actividad
+  • Gráficos de conversión
+  • Analytics de vendedor
+
+V1.8 (Propuesto)
+  • Colaboración de equipo
+  • Compartir en tiempo real
+  • Historial de cambios
+
+═══════════════════════════════════════════════════════════════════
+
+ESTADÍSTICAS GLOBALES
+═══════════════════════════════════════════════════════════════════
+
+Total de Versiones:     5
+Versiones en Prod:      5
+Características:        40+
+Líneas de código:       2000+
+Documentos:             30+
+Errores encontrados:    0
+
+═══════════════════════════════════════════════════════════════════
+
+MODOS DE ACCESO
+═══════════════════════════════════════════════════════════════════
+
+Dashboard:         ?seccion=dashboard
+Clientes:          ?seccion=clientes-vendedor | clientes-comprador
+Prospectos:        ?seccion=prospectos-vendedor | prospectos-comprador
+Propiedades:       ?seccion=propiedades-vendedor | propiedades-comprador
+Alquileres:        ?seccion=alquileres-vendedor | alquileres-comprador
+📅 Recordatorios:  ?seccion=recordatorios (NUEVO V1.5)
+
+═══════════════════════════════════════════════════════════════════
+
+CONTACTO & SOPORTE
+═══════════════════════════════════════════════════════════════════
+
+Documentación:
+  • GUIA-RAPIDA.md         - Manual de usuario
+  • README-V1.5.md         - Documentación técnica
+  • TESTING-V1.5.md        - Plan de pruebas
+  • IMPLEMENTACION.md      - Arquitectura
+
+Última actualización: 2024-02-19
+Estado: ✅ TODO EN ORDEN
+
+═══════════════════════════════════════════════════════════════════
