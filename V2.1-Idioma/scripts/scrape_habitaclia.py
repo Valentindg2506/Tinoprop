@@ -15,8 +15,9 @@ import logging
 import os
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
+from urllib.parse import urljoin
 
 import mysql.connector
 import requests
@@ -57,6 +58,9 @@ def ensure_table(conn) -> None:
         banos TINYINT DEFAULT NULL,
         metros INT DEFAULT NULL,
         descripcion TEXT DEFAULT NULL,
+        imagen_url VARCHAR(500) DEFAULT NULL,
+        imagenes_json LONGTEXT DEFAULT NULL,
+        ascensor TINYINT DEFAULT NULL,
         url VARCHAR(400) NOT NULL,
         raw_hash CHAR(64) NOT NULL,
         scrape_run VARCHAR(80) DEFAULT NULL,
@@ -71,6 +75,22 @@ def ensure_table(conn) -> None:
     """
     with conn.cursor() as cur:
         cur.execute(ddl)
+        try:
+            cur.execute("ALTER TABLE scraped_propiedades ADD COLUMN imagen_url VARCHAR(500) DEFAULT NULL")
+        except mysql.connector.Error as exc:
+            # Column may already exist; ignore duplicate-column errors
+            if exc.errno not in (1060, 1061):
+                raise
+        try:
+            cur.execute("ALTER TABLE scraped_propiedades ADD COLUMN imagenes_json LONGTEXT DEFAULT NULL")
+        except mysql.connector.Error as exc:
+            if exc.errno not in (1060, 1061):
+                raise
+        try:
+            cur.execute("ALTER TABLE scraped_propiedades ADD COLUMN ascensor TINYINT DEFAULT NULL")
+        except mysql.connector.Error as exc:
+            if exc.errno not in (1060, 1061):
+                raise
     conn.commit()
 
 
@@ -87,12 +107,21 @@ def build_page_url(base_url: str, page: int) -> str:
 
 
 def fetch_soup(url: str, timeout: int = 20) -> Optional[BeautifulSoup]:
-    headers = {"User-Agent": USER_AGENT, "Accept-Language": "es-ES,es;q=0.9"}
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "es-ES,es;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Referer": "https://www.google.com/",
+    }
     resp = requests.get(url, headers=headers, timeout=timeout)
     if resp.status_code != 200:
         logging.warning("GET %s devolvio %s", url, resp.status_code)
+        _dump_debug_html(resp.text, url, suffix="status")
         return None
-    return BeautifulSoup(resp.text, "html.parser")
+    soup = BeautifulSoup(resp.text, "html.parser")
+    if not soup.find("article") and not soup.find("div", class_=re.compile("list-item", re.I)):
+        _dump_debug_html(resp.text, url, suffix="nolisting")
+    return soup
 
 
 def parse_price(text: str) -> Optional[float]:
@@ -132,11 +161,18 @@ def parse_from_ldjson(soup: BeautifulSoup) -> List[Dict]:
                 item = element.get("item", {}) if isinstance(element, dict) else {}
                 if not item:
                     continue
+                listing_url = ensure_absolute_url(item.get("url"))
+                image_field = item.get("image")
+                images = normalize_images(image_field, listing_url)
+                image_url = images[0] if images else None
+                if not images and image_url:
+                    images = [image_url]
+
                 listings.append(
                     {
                         "titulo": item.get("name"),
                         "descripcion": item.get("description"),
-                        "url": item.get("url"),
+                        "url": listing_url,
                         "precio": parse_price(str(item.get("offers", {}).get("price", ""))),
                         "moneda": (item.get("offers", {}).get("priceCurrency") or "EUR"),
                         "ubicacion": (item.get("address", {}).get("streetAddress") if isinstance(item.get("address"), dict) else None),
@@ -148,6 +184,8 @@ def parse_from_ldjson(soup: BeautifulSoup) -> List[Dict]:
                         "tipo": item.get("@type"),
                         "operacion": None,
                         "zona": None,
+                        "imagen_url": image_url,
+                        "imagenes": images,
                     }
                 )
     return listings
@@ -155,18 +193,43 @@ def parse_from_ldjson(soup: BeautifulSoup) -> List[Dict]:
 
 def parse_from_cards(soup: BeautifulSoup) -> List[Dict]:
     listings: List[Dict] = []
-    selectors = ["div.list-item", "article", "div[class*=\"list-item\"]"]
+    selectors = [
+        "div.list-item",
+        "article",
+        "div[class*=\"list-item\"]",
+        "li[class*=\"list-item\"]",
+        "div[class*=\"ListItem\"]",
+    ]
     for selector in selectors:
         for card in soup.select(selector):
             link = card.select_one("a")
             title_el = card.select_one(".list-item-title") or card.select_one("h3")
             price_el = card.select_one(".list-item-price") or card.select_one(".price")
             desc_el = card.select_one(".description") or card.select_one("p")
+            img_el = card.select_one("img") or card.select_one("picture img") or card.select_one("source")
             if not link or not title_el:
                 continue
-            href = link.get("href")
+            href = ensure_absolute_url(link.get("href"))
             if not href or "habitaclia.com" not in href:
                 continue
+            img_candidate = None
+            if img_el:
+                img_candidate = img_el.get("src") or img_el.get("data-src") or pick_first_from_srcset(img_el.get("srcset"))
+            if not img_candidate:
+                style_bg = img_el.get("style") if img_el else None
+                if style_bg and "url(" in style_bg:
+                    m = re.search(r"url\(['\"]?(.*?)['\"]?\)", style_bg)
+                    if m:
+                        img_candidate = m.group(1)
+            img_url = normalize_image_url(img_candidate, href)
+            images = [img_url] if img_url else []
+            # Extraer metadatos de m2, hab, baños desde el texto visible
+            details_text = " ".join([
+                (card.get_text(" ", strip=True) or ""),
+            ])
+            meta = extract_meta(details_text)
+            operacion_guess = guess_operacion(href, title_el.get_text(strip=True))
+            tipo_guess = guess_tipo(title_el.get_text(strip=True))
             listings.append(
                 {
                     "titulo": title_el.get_text(strip=True),
@@ -177,27 +240,92 @@ def parse_from_cards(soup: BeautifulSoup) -> List[Dict]:
                     "ubicacion": None,
                     "ciudad": None,
                     "provincia": None,
-                    "habitaciones": None,
-                    "banos": None,
-                    "metros": None,
-                    "tipo": None,
-                    "operacion": None,
+                    "habitaciones": meta.get("habitaciones"),
+                    "banos": meta.get("banos"),
+                    "metros": meta.get("metros"),
+                    "tipo": tipo_guess,
+                    "operacion": operacion_guess,
                     "zona": None,
+                    "imagen_url": img_url,
+                    "imagenes": images,
                 }
             )
     return listings
 
 
 def dedupe_listings(listings: List[Dict]) -> List[Dict]:
-    seen = set()
-    final: List[Dict] = []
+    def is_empty(value) -> bool:
+        if value is None:
+            return True
+        if isinstance(value, str):
+            txt = value.strip().lower()
+            return txt in ("", "sin titulo", "tipo no informado", "operacion no informada", "no informado")
+        return False
+
+    def merge_images(base: Dict, extra: Dict) -> None:
+        imgs = []
+        for source in (
+            base.get("imagenes") or [],
+            extra.get("imagenes") or [],
+            [base.get("imagen_url")] if base.get("imagen_url") else [],
+            [extra.get("imagen_url")] if extra.get("imagen_url") else [],
+        ):
+            for img in source:
+                if img and img not in imgs:
+                    imgs.append(img)
+        base["imagenes"] = imgs
+        if imgs:
+            base["imagen_url"] = imgs[0]
+
+    def merge_two(base: Dict, extra: Dict) -> Dict:
+        merged = dict(base)
+
+        # Campos de texto: quedarse con el no-vacio y más informativo
+        for field in ["titulo", "tipo", "operacion", "ubicacion", "zona", "ciudad", "provincia", "direccion", "descripcion", "moneda"]:
+            current = merged.get(field)
+            incoming = extra.get(field)
+            if is_empty(current) and not is_empty(incoming):
+                merged[field] = incoming
+            elif field in ("titulo", "descripcion") and not is_empty(incoming) and isinstance(incoming, str):
+                if is_empty(current) or len(incoming.strip()) > len(str(current).strip()):
+                    merged[field] = incoming
+
+        # Numéricos: preferir valores no nulos y razonables
+        for field in ["precio", "habitaciones", "banos", "metros"]:
+            current = merged.get(field)
+            incoming = extra.get(field)
+            if current is None and incoming is not None:
+                merged[field] = incoming
+            elif field == "metros" and incoming is not None and current is not None:
+                # Si el actual es claramente irreal y el nuevo parece válido
+                if (not isinstance(current, int) or current < 15 or current > 1500) and isinstance(incoming, int) and 15 <= incoming <= 1500:
+                    merged[field] = incoming
+            elif field == "habitaciones" and incoming is not None and current is not None:
+                if (not isinstance(current, int) or current < 0 or current > 10) and isinstance(incoming, int) and 0 <= incoming <= 10:
+                    merged[field] = incoming
+            elif field == "banos" and incoming is not None and current is not None:
+                if (not isinstance(current, int) or current < 0 or current > 8) and isinstance(incoming, int) and 0 <= incoming <= 8:
+                    merged[field] = incoming
+
+        if merged.get("ascensor") is None and extra.get("ascensor") is not None:
+            merged["ascensor"] = extra.get("ascensor")
+
+        merge_images(merged, extra)
+        return merged
+
+    merged_by_url: Dict[str, Dict] = {}
+    order: List[str] = []
     for item in listings:
         key = item.get("url")
-        if not key or key in seen:
+        if not key:
             continue
-        seen.add(key)
-        final.append(item)
-    return final
+        if key not in merged_by_url:
+            merged_by_url[key] = dict(item)
+            order.append(key)
+        else:
+            merged_by_url[key] = merge_two(merged_by_url[key], item)
+
+    return [merged_by_url[url] for url in order]
 
 
 def normalize_listing(raw: Dict, run_tag: str) -> Dict:
@@ -220,21 +348,182 @@ def normalize_listing(raw: Dict, run_tag: str) -> Dict:
         "banos": raw.get("banos"),
         "metros": raw.get("metros"),
         "descripcion": raw.get("descripcion"),
+        "imagen_url": raw.get("imagen_url"),
+        "imagenes": raw.get("imagenes") or [],
+        "ascensor": raw.get("ascensor"),
         "url": url,
         "raw_hash": hashlib.sha256(base_hash).hexdigest(),
         "scrape_run": run_tag,
     }
 
 
+def fetch_images(url: str, max_items: int = 8) -> List[str]:
+    if not url:
+        return []
+    images: List[str] = []
+    try:
+        soup = fetch_soup(url, timeout=25)
+        if not soup:
+            return []
+
+        # From meta tags
+        metas = [
+            soup.find("meta", property="og:image"),
+            soup.find("meta", property="og:image:secure_url"),
+            soup.find("meta", attrs={"name": "twitter:image"}),
+        ]
+        for tag in metas:
+            if tag and tag.get("content"):
+                images.append(normalize_image_url(tag.get("content"), url))
+
+        # From ld+json blocks inside detail page (if any)
+        for script in soup.find_all("script", {"type": "application/ld+json"}):
+            try:
+                data = json.loads(script.string or "")
+            except Exception:
+                continue
+            imgs = normalize_images(data.get("image"), url)
+            images.extend(imgs)
+
+        # From DOM images / sources
+        for img in soup.select("img[src], img[data-src], picture source[srcset]"):
+            candidate = img.get("src") or img.get("data-src") or pick_first_from_srcset(img.get("srcset"))
+            images.append(normalize_image_url(candidate, url))
+
+    except Exception as exc:
+        logging.debug("No se pudieron obtener imagenes para %s: %s", url, exc)
+
+    # Deduplicate preserving order
+    seen = set()
+    final = []
+    for im in images:
+        if not im or im in seen:
+            continue
+        seen.add(im)
+        final.append(im)
+        if len(final) >= max_items:
+            break
+    return final
+
+
+def normalize_image_url(image_url: Optional[str], base_url: Optional[str]) -> Optional[str]:
+    if not image_url:
+        return None
+    image_url = image_url.strip()
+    if image_url.startswith("//"):
+        return f"https:{image_url}"
+    if image_url.startswith("http://") or image_url.startswith("https://"):
+        return image_url
+    if base_url:
+        return urljoin(base_url, image_url)
+    return image_url
+
+
+def pick_first_from_srcset(srcset: Optional[str]) -> Optional[str]:
+    if not srcset:
+        return None
+    # srcset example: "https://... 800w, https://... 400w"
+    first_part = srcset.split(",")[0].strip()
+    return first_part.split()[0] if first_part else None
+
+
+def normalize_images(value, base_url: Optional[str]) -> List[str]:
+    imgs: List[str] = []
+    if isinstance(value, list):
+        imgs = [normalize_image_url(v, base_url) for v in value]
+    elif isinstance(value, str):
+        imgs = [normalize_image_url(value, base_url)]
+    else:
+        imgs = []
+    return [img for img in imgs if img]
+
+
+def extract_meta(text: str) -> Dict[str, Optional[int]]:
+    meta = {"metros": None, "habitaciones": None, "banos": None}
+    if not text:
+        return meta
+
+    def pick_first_int(values, max_value: Optional[int] = None) -> Optional[int]:
+        for val in values:
+            try:
+                num = int(val)
+            except (ValueError, TypeError):
+                continue
+            if max_value is not None and num > max_value:
+                continue
+            return num
+        return None
+
+    metros_matches = re.findall(r"(\d+)\s*(?:m2|m²)", text, flags=re.IGNORECASE)
+    hab_matches = re.findall(r"(\d+)\s*(?:hab(?:itaciones?)?)", text, flags=re.IGNORECASE)
+    banos_matches = re.findall(r"(\d+)\s*ba(?:n|ñ)os?", text, flags=re.IGNORECASE)
+
+    meta["metros"] = pick_first_int(metros_matches)
+    # Habitaciones: descarta outliers (p.ej., 20) quedandose con valores razonables
+    meta["habitaciones"] = pick_first_int(hab_matches, max_value=10)
+    meta["banos"] = pick_first_int(banos_matches, max_value=8)
+    return meta
+
+
+def guess_operacion(url: str, title: str) -> Optional[str]:
+    txt = f"{url} {title}".lower()
+    if "alquiler" in txt or "/alquiler" in txt:
+        return "alquiler"
+    if "venta" in txt or "comprar" in txt:
+        return "venta"
+    return None
+
+
+def guess_tipo(title: str) -> Optional[str]:
+    t = title.lower()
+    for kw in ["atico", "ático", "duplex", "dúplex", "chalet", "casa", "adosado", "piso", "apartamento", "estudio", "local", "garaje"]:
+        if kw in t:
+            return kw
+    return None
+
+
+def _dump_debug_html(html: str, url: str, suffix: str = "") -> None:
+    try:
+        os.makedirs("/tmp", exist_ok=True)
+        safe_name = re.sub(r"[^a-zA-Z0-9]+", "_", url)[:80]
+        fname = f"/tmp/habitaclia_debug_{safe_name}_{suffix}.html"
+        with open(fname, "w", encoding="utf-8") as f:
+            f.write(html)
+        logging.info("Dump HTML debug -> %s", fname)
+    except Exception as exc:
+        logging.debug("No se pudo volcar HTML debug: %s", exc)
+
+
+def ensure_absolute_url(url: Optional[str]) -> Optional[str]:
+    if not url:
+        return None
+    url = url.strip()
+    if url.startswith("//"):
+        return f"https:{url}"
+    if url.startswith("http://") or url.startswith("https://"):
+        return url
+    return urljoin(DEFAULT_BASE_URL, url)
+
+
 def upsert_listing(conn, listing: Dict) -> None:
+    payload = dict(listing)
+    payload["imagenes_json"] = json.dumps(listing.get("imagenes") or [])
+    # Remove non-SQL fields that would break connector conversion
+    payload.pop("imagenes", None)
+    # ascensor puede ser bool -> cast a int o None
+    if "ascensor" in payload:
+        if payload["ascensor"] is True:
+            payload["ascensor"] = 1
+        elif payload["ascensor"] is False:
+            payload["ascensor"] = 0
     sql = """
     INSERT INTO scraped_propiedades
     (fuente, titulo, tipo, operacion, precio, moneda, ubicacion, zona, ciudad, provincia, direccion,
-     habitaciones, banos, metros, descripcion, url, raw_hash, scrape_run, scraped_at)
+     habitaciones, banos, metros, descripcion, imagen_url, imagenes_json, ascensor, url, raw_hash, scrape_run, scraped_at)
     VALUES
     (%(fuente)s, %(titulo)s, %(tipo)s, %(operacion)s, %(precio)s, %(moneda)s, %(ubicacion)s, %(zona)s,
      %(ciudad)s, %(provincia)s, %(direccion)s, %(habitaciones)s, %(banos)s, %(metros)s, %(descripcion)s,
-     %(url)s, %(raw_hash)s, %(scrape_run)s, NOW())
+     %(imagen_url)s, %(imagenes_json)s, %(ascensor)s, %(url)s, %(raw_hash)s, %(scrape_run)s, NOW())
     ON DUPLICATE KEY UPDATE
         titulo = VALUES(titulo),
         tipo = VALUES(tipo),
@@ -250,12 +539,15 @@ def upsert_listing(conn, listing: Dict) -> None:
         banos = VALUES(banos),
         metros = VALUES(metros),
         descripcion = VALUES(descripcion),
+        imagen_url = COALESCE(VALUES(imagen_url), imagen_url),
+        imagenes_json = CASE WHEN VALUES(imagenes_json) IS NOT NULL AND VALUES(imagenes_json) != '[]' THEN VALUES(imagenes_json) ELSE imagenes_json END,
+        ascensor = COALESCE(VALUES(ascensor), ascensor),
         raw_hash = VALUES(raw_hash),
         scrape_run = VALUES(scrape_run),
         updated_at = NOW();
     """
     with conn.cursor() as cur:
-        cur.execute(sql, listing)
+        cur.execute(sql, payload)
 
 
 def scrape(base_url: str, pages: int, delay: float, run_tag: str, dry_run: bool = False) -> None:
@@ -274,10 +566,26 @@ def scrape(base_url: str, pages: int, delay: float, run_tag: str, dry_run: bool 
         listings = parse_from_ldjson(soup) + parse_from_cards(soup)
         listings = dedupe_listings(listings)
 
+        if not listings:
+            alt_url = page_url.replace("www.", "m.", 1)
+            logging.warning("Pagina %s sin listados parseados, probando version movil %s", page_url, alt_url)
+            soup_alt = fetch_soup(alt_url)
+            if soup_alt:
+                listings = dedupe_listings(parse_from_ldjson(soup_alt) + parse_from_cards(soup_alt))
+        if not listings:
+            logging.warning("Pagina %s sin listados parseados (tras fallback)", page_url)
+
         for raw in listings:
             normalized = normalize_listing(raw, run_tag)
             if not normalized.get("url"):
                 continue
+            if not normalized.get("imagenes"):
+                images = fetch_images(normalized.get("url"))
+                normalized["imagenes"] = images
+                if images and not normalized.get("imagen_url"):
+                    normalized["imagen_url"] = images[0]
+            if not normalized.get("imagen_url") and normalized.get("imagenes"):
+                normalized["imagen_url"] = normalized["imagenes"][0]
             if dry_run:
                 logging.debug("[DRY-RUN] %s", normalized["titulo"])
                 continue
@@ -296,7 +604,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="URL de listado en Habitaclia")
     parser.add_argument("--pages", type=int, default=2, help="Numero de paginas a recorrer")
     parser.add_argument("--delay", type=float, default=1.5, help="Segundos de espera entre paginas")
-    parser.add_argument("--run-tag", default=datetime.utcnow().strftime("%Y%m%d%H%M%S"), help="Etiqueta identificadora de la corrida")
+    parser.add_argument("--run-tag", default=datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S"), help="Etiqueta identificadora de la corrida")
     parser.add_argument("--dry-run", action="store_true", help="No escribe en BD, solo muestra logs")
     parser.add_argument("--verbose", action="store_true", help="Nivel debug")
     return parser.parse_args()

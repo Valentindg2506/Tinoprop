@@ -504,6 +504,9 @@ function scraped_propiedades_asegurar_tabla(PDO $pdo): void
             banos TINYINT DEFAULT NULL,
             metros INT DEFAULT NULL,
             descripcion TEXT DEFAULT NULL,
+            imagen_url VARCHAR(500) DEFAULT NULL,
+            imagenes_json LONGTEXT DEFAULT NULL,
+            ascensor TINYINT DEFAULT NULL,
             url VARCHAR(400) NOT NULL,
             raw_hash CHAR(64) NOT NULL,
             scrape_run VARCHAR(80) DEFAULT NULL,
@@ -516,6 +519,31 @@ function scraped_propiedades_asegurar_tabla(PDO $pdo): void
             KEY idx_operacion (operacion)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
     );
+
+    try {
+        $pdo->exec('ALTER TABLE scraped_propiedades ADD COLUMN imagen_url VARCHAR(500) DEFAULT NULL');
+    } catch (PDOException $e) {
+        // Duplicate column => ignore
+        if ($e->getCode() !== '42S21') {
+            throw $e;
+        }
+    }
+
+    try {
+        $pdo->exec('ALTER TABLE scraped_propiedades ADD COLUMN imagenes_json LONGTEXT DEFAULT NULL');
+    } catch (PDOException $e) {
+        if ($e->getCode() !== '42S21') {
+            throw $e;
+        }
+    }
+
+    try {
+        $pdo->exec('ALTER TABLE scraped_propiedades ADD COLUMN ascensor TINYINT DEFAULT NULL');
+    } catch (PDOException $e) {
+        if ($e->getCode() !== '42S21') {
+            throw $e;
+        }
+    }
 
     $tabla_lista = true;
 }
