@@ -18,6 +18,170 @@ foreach ($clientes_data_raw as $cliente_row) {
 $propiedades_data_stmt = $pdo->query("SELECT id, titulo, tipo, ubicacion, direccion, precio, operacion, estado, referencia FROM propiedades ORDER BY id");
 $propiedades_data = $propiedades_data_stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+function doc_collect_recent_files(string $kind, int $limit = 10): array
+{
+    $base = __DIR__ . '/../storage/documentacion';
+    $kind_folder = $kind === 'generated' ? 'generados' : 'subidos';
+    $entity_map = [
+        'clientes' => 'cliente',
+        'propiedades' => 'propiedad',
+    ];
+
+    $files = [];
+
+    foreach ($entity_map as $folder => $entity_type) {
+        $entity_root = $base . '/' . $folder;
+        if (!is_dir($entity_root)) {
+            continue;
+        }
+
+        $entity_ids = scandir($entity_root) ?: [];
+        foreach ($entity_ids as $entity_id) {
+            if ($entity_id === '.' || $entity_id === '..' || !ctype_digit((string) $entity_id)) {
+                continue;
+            }
+
+            $kind_path = $entity_root . '/' . $entity_id . '/' . $kind_folder;
+            if (!is_dir($kind_path)) {
+                continue;
+            }
+
+            $entries = scandir($kind_path) ?: [];
+            foreach ($entries as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+
+                $full = $kind_path . '/' . $entry;
+                if (!is_file($full)) {
+                    continue;
+                }
+
+                if ($kind === 'generated' && str_ends_with(strtolower($entry), '.json')) {
+                    continue;
+                }
+
+                $files[] = [
+                    'name' => $entry,
+                    'entity_type' => $entity_type,
+                    'entity_id' => (int) $entity_id,
+                    'modified' => (int) filemtime($full),
+                    'size' => (int) filesize($full),
+                    'download_url' => 'api/documentacion.php?action=download&entity_type=' . urlencode($entity_type) . '&entity_id=' . (int) $entity_id . '&kind=' . urlencode($kind) . '&file=' . urlencode($entry),
+                ];
+            }
+        }
+    }
+
+    usort($files, static function (array $a, array $b): int {
+        return $b['modified'] <=> $a['modified'];
+    });
+
+    return array_slice($files, 0, $limit);
+}
+
+function doc_is_valid_date(?string $value): bool
+{
+    if (!$value) {
+        return false;
+    }
+
+    $d = DateTime::createFromFormat('Y-m-d', $value);
+    return $d instanceof DateTime && $d->format('Y-m-d') === $value;
+}
+
+function doc_filter_recent_files(array $files, string $entity_filter, ?string $from_date, ?string $to_date): array
+{
+    $from_ts = $from_date ? strtotime($from_date . ' 00:00:00') : null;
+    $to_ts = $to_date ? strtotime($to_date . ' 23:59:59') : null;
+
+    return array_values(array_filter($files, static function (array $item) use ($entity_filter, $from_ts, $to_ts): bool {
+        if ($entity_filter !== 'todos' && $item['entity_type'] !== $entity_filter) {
+            return false;
+        }
+
+        if ($from_ts !== null && $item['modified'] < $from_ts) {
+            return false;
+        }
+
+        if ($to_ts !== null && $item['modified'] > $to_ts) {
+            return false;
+        }
+
+        return true;
+    }));
+}
+
+function doc_paginate(array $files, int $page, int $per_page): array
+{
+    $total_items = count($files);
+    $total_pages = max(1, (int) ceil($total_items / $per_page));
+    $page = max(1, min($page, $total_pages));
+    $offset = ($page - 1) * $per_page;
+
+    return [
+        'items' => array_slice($files, $offset, $per_page),
+        'total_items' => $total_items,
+        'total_pages' => $total_pages,
+        'page' => $page,
+    ];
+}
+
+function doc_build_url(array $overrides = []): string
+{
+    $params = $_GET;
+    $params['seccion'] = 'documentacion';
+    foreach ($overrides as $k => $v) {
+        if ($v === null || $v === '') {
+            unset($params[$k]);
+            continue;
+        }
+        $params[$k] = $v;
+    }
+
+    return '?' . http_build_query($params);
+}
+
+$doc_entity_filter = $_GET['doc_entity'] ?? 'todos';
+if (!in_array($doc_entity_filter, ['todos', 'cliente', 'propiedad'], true)) {
+    $doc_entity_filter = 'todos';
+}
+
+$doc_q = trim((string) ($_GET['doc_q'] ?? ''));
+
+$doc_from_raw = $_GET['doc_from'] ?? '';
+$doc_to_raw = $_GET['doc_to'] ?? '';
+$doc_from = doc_is_valid_date($doc_from_raw) ? $doc_from_raw : '';
+$doc_to = doc_is_valid_date($doc_to_raw) ? $doc_to_raw : '';
+
+$doc_page_gen = max(1, (int) ($_GET['doc_pg_gen'] ?? 1));
+$doc_page_up = max(1, (int) ($_GET['doc_pg_up'] ?? 1));
+$doc_per_page = 6;
+
+$ultimos_generados_all = doc_collect_recent_files('generated', 200);
+$ultimos_guardados_all = doc_collect_recent_files('uploaded', 200);
+
+$ultimos_generados_filtered = doc_filter_recent_files($ultimos_generados_all, $doc_entity_filter, $doc_from ?: null, $doc_to ?: null);
+$ultimos_guardados_filtered = doc_filter_recent_files($ultimos_guardados_all, $doc_entity_filter, $doc_from ?: null, $doc_to ?: null);
+
+if ($doc_q !== '') {
+    $needle = mb_strtolower($doc_q);
+
+    $ultimos_generados_filtered = array_values(array_filter($ultimos_generados_filtered, static function (array $item) use ($needle): bool {
+        return str_contains(mb_strtolower((string) $item['name']), $needle);
+    }));
+
+    $ultimos_guardados_filtered = array_values(array_filter($ultimos_guardados_filtered, static function (array $item) use ($needle): bool {
+        return str_contains(mb_strtolower((string) $item['name']), $needle);
+    }));
+}
+
+$ultimos_generados_pag = doc_paginate($ultimos_generados_filtered, $doc_page_gen, $doc_per_page);
+$ultimos_guardados_pag = doc_paginate($ultimos_guardados_filtered, $doc_page_up, $doc_per_page);
+
+$ultimos_generados = $ultimos_generados_pag['items'];
+$ultimos_guardados = $ultimos_guardados_pag['items'];
+
 $plantillas = [
     [
         'key' => 'encargo_venta_exclusiva',
@@ -217,6 +381,138 @@ $plantillas = [
         <button type="button" class="btn_guardar" id="btn_ir_subir">Ir a subir</button>
     </article>
 </div>
+
+<article class="tarjeta_info doc_recent_card" id="doc_recentes">
+    <h3>Últimos documentos</h3>
+    <p>Resumen rápido de la actividad reciente en documentación.</p>
+
+    <form method="GET" class="doc_filter_bar">
+        <input type="hidden" name="seccion" value="documentacion">
+        <input type="hidden" name="doc_pg_gen" value="1">
+        <input type="hidden" name="doc_pg_up" value="1">
+
+        <div class="doc_filter_item">
+            <label for="doc_entity">Entidad</label>
+            <select id="doc_entity" name="doc_entity">
+                <option value="todos" <?php echo $doc_entity_filter === 'todos' ? 'selected' : ''; ?>>Todas</option>
+                <option value="cliente" <?php echo $doc_entity_filter === 'cliente' ? 'selected' : ''; ?>>Cliente</option>
+                <option value="propiedad" <?php echo $doc_entity_filter === 'propiedad' ? 'selected' : ''; ?>>Propiedad</option>
+            </select>
+        </div>
+
+        <div class="doc_filter_item">
+            <label for="doc_from">Desde</label>
+            <input type="date" id="doc_from" name="doc_from" value="<?php echo e($doc_from); ?>">
+        </div>
+
+        <div class="doc_filter_item">
+            <label for="doc_to">Hasta</label>
+            <input type="date" id="doc_to" name="doc_to" value="<?php echo e($doc_to); ?>">
+        </div>
+
+        <div class="doc_filter_item doc_filter_search">
+            <label for="doc_q">Buscar archivo (tiempo real)</label>
+            <input type="text" id="doc_q" name="doc_q" value="<?php echo e($doc_q); ?>" placeholder="Ej: contrato, sepa, arras...">
+        </div>
+
+        <div class="doc_filter_actions">
+            <button type="submit" class="btn_guardar">Filtrar</button>
+            <a class="btn_secundario" href="<?php echo e(doc_build_url(['doc_entity' => null, 'doc_from' => null, 'doc_to' => null, 'doc_q' => null, 'doc_pg_gen' => 1, 'doc_pg_up' => 1])); ?>">Limpiar</a>
+        </div>
+    </form>
+
+    <div class="doc_recent_grid">
+        <div>
+            <h4>Últimos generados</h4>
+            <div class="doc_table_wrap">
+                <table class="doc_table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Entidad</th>
+                            <th>Archivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!$ultimos_generados): ?>
+                            <tr>
+                                <td colspan="3">Sin documentos generados aún.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($ultimos_generados as $item): ?>
+                                <tr class="doc_row_item" data-file-name="<?php echo e(mb_strtolower($item['name'])); ?>">
+                                    <td><?php echo e(date('d/m/Y H:i', $item['modified'])); ?></td>
+                                    <td><?php echo e(ucfirst($item['entity_type']) . ' #' . $item['entity_id']); ?></td>
+                                    <td>
+                                        <a href="<?php echo e($item['download_url']); ?>" target="_blank"><?php echo e($item['name']); ?></a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                        <tr class="doc_empty_state oculto">
+                            <td colspan="3">No hay resultados para la búsqueda actual.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="doc_pagination">
+                <span>Página <?php echo (int) $ultimos_generados_pag['page']; ?> de <?php echo (int) $ultimos_generados_pag['total_pages']; ?> · <?php echo (int) $ultimos_generados_pag['total_items']; ?> docs</span>
+                <div class="doc_pagination_actions">
+                    <?php $prev_gen = max(1, (int) $ultimos_generados_pag['page'] - 1); ?>
+                    <?php $next_gen = min((int) $ultimos_generados_pag['total_pages'], (int) $ultimos_generados_pag['page'] + 1); ?>
+                    <a class="btn_secundario <?php echo $ultimos_generados_pag['page'] <= 1 ? 'disabled' : ''; ?>" href="<?php echo e(doc_build_url(['doc_pg_gen' => $prev_gen])); ?>">Anterior</a>
+                    <a class="btn_secundario <?php echo $ultimos_generados_pag['page'] >= $ultimos_generados_pag['total_pages'] ? 'disabled' : ''; ?>" href="<?php echo e(doc_build_url(['doc_pg_gen' => $next_gen])); ?>">Siguiente</a>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h4>Últimos guardados (subidos)</h4>
+            <div class="doc_table_wrap">
+                <table class="doc_table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Entidad</th>
+                            <th>Archivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!$ultimos_guardados): ?>
+                            <tr>
+                                <td colspan="3">Sin documentos guardados aún.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($ultimos_guardados as $item): ?>
+                                <tr class="doc_row_item" data-file-name="<?php echo e(mb_strtolower($item['name'])); ?>">
+                                    <td><?php echo e(date('d/m/Y H:i', $item['modified'])); ?></td>
+                                    <td><?php echo e(ucfirst($item['entity_type']) . ' #' . $item['entity_id']); ?></td>
+                                    <td>
+                                        <a href="<?php echo e($item['download_url']); ?>" target="_blank"><?php echo e($item['name']); ?></a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                        <tr class="doc_empty_state oculto">
+                            <td colspan="3">No hay resultados para la búsqueda actual.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="doc_pagination">
+                <span>Página <?php echo (int) $ultimos_guardados_pag['page']; ?> de <?php echo (int) $ultimos_guardados_pag['total_pages']; ?> · <?php echo (int) $ultimos_guardados_pag['total_items']; ?> docs</span>
+                <div class="doc_pagination_actions">
+                    <?php $prev_up = max(1, (int) $ultimos_guardados_pag['page'] - 1); ?>
+                    <?php $next_up = min((int) $ultimos_guardados_pag['total_pages'], (int) $ultimos_guardados_pag['page'] + 1); ?>
+                    <a class="btn_secundario <?php echo $ultimos_guardados_pag['page'] <= 1 ? 'disabled' : ''; ?>" href="<?php echo e(doc_build_url(['doc_pg_up' => $prev_up])); ?>">Anterior</a>
+                    <a class="btn_secundario <?php echo $ultimos_guardados_pag['page'] >= $ultimos_guardados_pag['total_pages'] ? 'disabled' : ''; ?>" href="<?php echo e(doc_build_url(['doc_pg_up' => $next_up])); ?>">Siguiente</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</article>
 
 <section class="doc_panel oculto" id="panel-subidas">
     <div class="doc_panel_head">
@@ -776,6 +1072,36 @@ docPreviewModal.addEventListener('click', (event) => {
         cerrarPreview();
     }
 });
+
+const docSearchInput = document.getElementById('doc_q');
+if (docSearchInput) {
+    const aplicarBusquedaTiempoReal = () => {
+        const value = docSearchInput.value.trim().toLowerCase();
+        const tables = document.querySelectorAll('.doc_table');
+
+        tables.forEach((table) => {
+            const rows = table.querySelectorAll('tbody tr.doc_row_item');
+            const emptyRow = table.querySelector('tbody tr.doc_empty_state');
+            let visibles = 0;
+
+            rows.forEach((row) => {
+                const name = (row.getAttribute('data-file-name') || '').toLowerCase();
+                const visible = value === '' || name.includes(value);
+                row.classList.toggle('oculto', !visible);
+                if (visible) {
+                    visibles += 1;
+                }
+            });
+
+            if (emptyRow) {
+                emptyRow.classList.toggle('oculto', visibles > 0);
+            }
+        });
+    };
+
+    docSearchInput.addEventListener('input', aplicarBusquedaTiempoReal);
+    aplicarBusquedaTiempoReal();
+}
 
 docPreviewConfirmar.addEventListener('click', async () => {
     const feedback = document.getElementById('pdf_feedback');
