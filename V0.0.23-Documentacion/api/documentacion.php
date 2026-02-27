@@ -1,6 +1,13 @@
 <?php
+/*
+ * Archivo: api/documentacion.php
+ * Rol: endpoint para documentación de clientes/propiedades.
+ * Acciones: list_files, upload, save_pdf y download.
+ * Persistencia: filesystem en storage/documentacion por entidad y tipo.
+ */
 require_once __DIR__ . '/../inc/bootstrap.php';
 
+/* Devuelve una respuesta JSON consistente con código HTTP. */
 function doc_json_response(int $code, array $payload): void
 {
     http_response_code($code);
@@ -9,6 +16,7 @@ function doc_json_response(int $code, array $payload): void
     exit;
 }
 
+/* Normaliza y valida el tipo de entidad admitido por el endpoint. */
 function doc_normalizar_entidad(?string $entity_type): ?string
 {
     if ($entity_type === 'cliente' || $entity_type === 'propiedad') {
@@ -18,6 +26,7 @@ function doc_normalizar_entidad(?string $entity_type): ?string
     return null;
 }
 
+/* Obtiene ruta base de almacenamiento documental y asegura su existencia. */
 function doc_base_dir(): string
 {
     $base = __DIR__ . '/../storage/documentacion';
@@ -28,6 +37,7 @@ function doc_base_dir(): string
     return $base;
 }
 
+/* Construye la ruta absoluta por entidad (cliente/propiedad) y tipo (subidos/generados). */
 function doc_entity_dir(string $entity_type, int $entity_id, string $kind): string
 {
     $folder = $entity_type === 'cliente' ? 'clientes' : 'propiedades';
@@ -41,6 +51,7 @@ function doc_entity_dir(string $entity_type, int $entity_id, string $kind): stri
     return $path;
 }
 
+/* Convierte tamaño en bytes a etiqueta legible (KB/MB). */
 function doc_size_label(int $bytes): string
 {
     if ($bytes < 1024) {
@@ -54,6 +65,7 @@ function doc_size_label(int $bytes): string
     return round($bytes / 1048576, 1) . ' MB';
 }
 
+/* Lista archivos de una carpeta documental con metadatos para la UI. */
 function doc_list_files(string $path, string $entity_type, int $entity_id, string $kind): array
 {
     if (!is_dir($path)) {

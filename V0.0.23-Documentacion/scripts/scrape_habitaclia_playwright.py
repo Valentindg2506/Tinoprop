@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
 """
+Archivo: scripts/scrape_habitaclia_playwright.py
+Rol: scraper alternativo con Playwright para escenarios anti-bot/captcha.
+
+Índice de funciones:
+- is_block_page: detecta señales de bloqueo/captcha en HTML.
+- _dump_debug_html: guarda HTML de depuración en /tmp.
+- _stealth_init_script: define script anti-bot básico para el contexto del navegador.
+- _first_from_srcset / _dedupe_urls: utilidades de normalización de URLs de imagen.
+- _collect_ldjson_images: recorre estructuras JSON-LD para extraer imágenes.
+- extract_images_from_detail_html: extrae imágenes desde la página de detalle.
+- fetch_html: navega con Playwright y devuelve HTML con reintentos.
+- scrape_page: scrapea una página de listados y persiste resultados.
+- parse_from_ldjson_html / parse_from_cards_html: wrappers de parseo reutilizando lógica base.
+- _wait_for_user: espera interacción manual en modo resolución asistida.
+- manual_solve_challenge: abre flujo manual para resolver bloqueos/captcha.
+- main_async: orquesta todo el scraping asíncrono con contexts desktop/mobile.
+- parse_args: define argumentos CLI específicos de Playwright.
+- main: punto de entrada del script.
+
 Scraper Habitaclia usando Playwright para evadir el bloqueo JS/captcha.
 - Reutiliza la logica de parseo y upsert de scrape_habitaclia.
 - Necesita playwright instalado: pip install playwright && playwright install chromium
@@ -99,6 +118,8 @@ def _dedupe_urls(urls):
 
 
 def _collect_ldjson_images(node, base_url: str, out):
+    # Recorre recursivamente estructuras dict/list para encontrar cualquier clave image.
+    # Las imágenes se normalizan para conservar URLs absolutas y formato homogéneo.
     if isinstance(node, dict):
         if "image" in node:
             out.extend(normalize_images(node.get("image"), base_url))
@@ -113,11 +134,13 @@ def extract_images_from_detail_html(html: str, base_url: str, max_items: int = 1
     soup = BeautifulSoup(html or "", "html.parser")
     images = []
 
+    # 1) Prioridad alta: imágenes sociales (og/twitter) que suelen apuntar a imagen principal.
     for tag in soup.select("meta[property='og:image'], meta[property='og:image:secure_url'], meta[name='twitter:image']"):
         content = (tag.get("content") or "").strip()
         if content:
             images.append(normalize_image_url(content, base_url))
 
+    # 2) Extrae imágenes embebidas en JSON-LD del detalle.
     for script in soup.find_all("script", {"type": "application/ld+json"}):
         raw = (script.string or "").strip()
         if not raw:
@@ -128,6 +151,7 @@ def extract_images_from_detail_html(html: str, base_url: str, max_items: int = 1
             continue
         _collect_ldjson_images(data, base_url, images)
 
+    # 3) Fallback DOM: recorre img/source para capturar src, data-src y srcset.
     for el in soup.select("img[src], img[data-src], img[data-original], source[srcset], source[data-srcset]"):
         candidate = (
             el.get("src")
@@ -143,6 +167,7 @@ def extract_images_from_detail_html(html: str, base_url: str, max_items: int = 1
         if normalized:
             images.append(normalized)
 
+    # Limpieza final: deduplicar, filtrar iconos/logos/data-uri y limitar cantidad.
     filtered = []
     for url in _dedupe_urls(images):
         low = url.lower()
@@ -166,11 +191,12 @@ def extract_images_from_detail_html(html: str, base_url: str, max_items: int = 1
 async def fetch_html(context, url: str, wait: int = 3000, retries: int = 2) -> str:
     page = await context.new_page()
     try:
-        # First load: be tolerant; some anti-bot pages never reach networkidle
+        # Primera carga: usar domcontentloaded porque algunas páginas con challenge
+        # no llegan nunca a networkidle.
         await page.goto(url, wait_until="domcontentloaded", timeout=45000)
         await page.wait_for_timeout(wait)
 
-        # Retry loop: sometimes the JS challenge auto-resolves after a few seconds
+        # Bucle de reintento: a veces el challenge JS se resuelve tras unos segundos.
         for attempt in range(retries + 1):
             try:
                 await page.wait_for_load_state("networkidle", timeout=15000)
@@ -189,6 +215,7 @@ async def fetch_html(context, url: str, wait: int = 3000, retries: int = 2) -> s
             except Exception:
                 pass
 
+            # Caso bueno: HTML útil y título no bloqueado.
             if not is_block_page(html) and title.lower() != "pardon our interruption":
                 return html
 
@@ -201,7 +228,7 @@ async def fetch_html(context, url: str, wait: int = 3000, retries: int = 2) -> s
                     await page.goto(url, wait_until="domcontentloaded", timeout=45000)
                 await page.wait_for_timeout(wait)
 
-        # Return last HTML even if blocked (caller will decide)
+        # Devuelve el último HTML aunque esté bloqueado (el caller decide fallback).
         return html
     finally:
         await page.close()
@@ -213,6 +240,7 @@ async def scrape_page(desktop_ctx, mobile_ctx, url: str, run_tag: str, conn, del
     listings = dedupe_listings(parse_from_ldjson_html(html) + parse_from_cards_html(html))
 
     if not listings:
+        # Fallback móvil: algunos layouts bloquean contenido en desktop y muestran en m.
         logging.warning("Pagina sin listados parseados, probando version movil %s", url)
         html_m = await fetch_html(mobile_ctx, url.replace("www.", "m."))
         listings = dedupe_listings(parse_from_ldjson_html(html_m) + parse_from_cards_html(html_m))
@@ -224,7 +252,7 @@ async def scrape_page(desktop_ctx, mobile_ctx, url: str, run_tag: str, conn, del
             _dump_debug_html(html_m, url.replace('www.', 'm.'), 'nolist_mobile')
         return 0
 
-    # Detail page uses same desktop context so cookies/session persist
+    # Usa la misma sesión/contexto para conservar cookies y cualquier challenge resuelto.
     detail_page = await desktop_ctx.new_page()
 
     for raw in listings:
@@ -232,7 +260,7 @@ async def scrape_page(desktop_ctx, mobile_ctx, url: str, run_tag: str, conn, del
         if not normalized.get("url"):
             continue
 
-        # Fetch detail page to fill missing meta/ascensor
+        # Enriquecimiento por detalle: completa metadatos no visibles en la tarjeta/listado.
         try:
             await detail_page.goto(normalized.get("url"), wait_until="domcontentloaded", timeout=45000)
             await detail_page.wait_for_timeout(1500)
@@ -250,11 +278,13 @@ async def scrape_page(desktop_ctx, mobile_ctx, url: str, run_tag: str, conn, del
                 if detail_meta.get("banos"):
                     normalized["banos"] = detail_meta.get("banos")
                 low = detail_html.lower()
+                # Heurística simple de ascensor basada en texto libre del detalle.
                 if "sin ascensor" in low:
                     normalized["ascensor"] = False
                 elif "ascensor" in low:
                     normalized["ascensor"] = True
 
+                # Prioriza imágenes de detalle frente a las que llegan en listing.
                 detail_images = extract_images_from_detail_html(detail_html, normalized.get("url"))
                 if detail_images:
                     merged = detail_images + (normalized.get("imagenes") or [])
@@ -266,6 +296,7 @@ async def scrape_page(desktop_ctx, mobile_ctx, url: str, run_tag: str, conn, del
         except Exception as exc:
             logging.debug("No se pudo leer detalle %s: %s", normalized.get("url"), exc)
 
+        # Fallback final de imágenes (scraper base) si no se obtuvieron en detalle/listado.
         if not normalized.get("imagenes"):
             images = fetch_images(normalized.get("url"))
             normalized["imagenes"] = images
@@ -273,6 +304,7 @@ async def scrape_page(desktop_ctx, mobile_ctx, url: str, run_tag: str, conn, del
                 normalized["imagen_url"] = images[0]
         if not normalized.get("imagen_url") and normalized.get("imagenes"):
             normalized["imagen_url"] = normalized["imagenes"][0]
+        # En modo dry-run no persiste en BD, solo recorre y valida pipeline.
         if dry_run:
             logging.debug("[DRY-RUN] %s", normalized["titulo"])
             continue
@@ -287,6 +319,7 @@ async def scrape_page(desktop_ctx, mobile_ctx, url: str, run_tag: str, conn, del
 
 
 def parse_from_ldjson_html(html: str):
+    # Wrapper para reutilizar parser base que espera BeautifulSoup.
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html, "html.parser")
@@ -294,6 +327,7 @@ def parse_from_ldjson_html(html: str):
 
 
 def parse_from_cards_html(html: str):
+    # Wrapper para reutilizar parser de tarjetas del scraper principal.
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html, "html.parser")
@@ -321,6 +355,7 @@ async def manual_solve_challenge(context, url: str) -> bool:
         logging.warning("Se detecto bloqueo/captcha en %s", url)
         logging.warning("Resuelve el captcha en la ventana del navegador abierta.")
 
+        # Permite hasta 5 ciclos de confirmación manual antes de continuar.
         for attempt in range(1, 6):
             await _wait_for_user(f"Pulsa ENTER cuando lo hayas resuelto (chequeo {attempt}/5)... ")
             try:
@@ -354,6 +389,7 @@ async def main_async(
     user_data_dir: str,
     manual_once: bool,
 ) -> None:
+    # Orquestador principal: conexión BD + contexto Playwright + bucle de páginas.
     logging.info("Iniciando scraping (Playwright) base_url=%s pages=%s", base_url, pages)
     conn = get_db_conn()
     ensure_table(conn)
@@ -376,7 +412,8 @@ async def main_async(
         )
         await persistent_ctx.add_init_script(_stealth_init_script())
 
-        # Reuse same context for "mobile" fallback too (UA won't be mobile, but can still help sometimes)
+        # Se reutiliza contexto para fallback móvil. Aunque la UA sea desktop,
+        # la URL m. puede devolver DOM distinto y salvar parseos vacíos.
         desktop_ctx = persistent_ctx
         mobile_ctx = persistent_ctx
 

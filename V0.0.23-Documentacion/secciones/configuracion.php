@@ -1,4 +1,9 @@
 <?php
+/*
+ * Sección: Configuración
+ * Rol: gestión de perfil, contraseña y preferencias de interfaz/dashboard.
+ * Acciones: actualizar_perfil, cambiar_password, guardar_preferencias y reset.
+ */
 require_once __DIR__ . '/../inc/bootstrap.php';
 
 $pdo = db();
@@ -6,6 +11,7 @@ $usuario_id = (int) ($_SESSION['usuario']['id'] ?? 0);
 $mensaje_error = flash_get('config_error');
 $mensaje_exito = flash_get('config_success');
 
+// Carga datos base del usuario autenticado para rellenar formularios.
 $stmt = $pdo->prepare('SELECT id, nombre, email, rol FROM usuarios WHERE id = :id LIMIT 1');
 $stmt->execute(['id' => $usuario_id]);
 $usuario = $stmt->fetch();
@@ -57,10 +63,12 @@ $map_idioma_label = [
     'Espanol' => 'es',
 ];
 
+// Controlador POST principal de configuración (perfil, seguridad y preferencias).
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $accion = $_POST['accion'] ?? '';
 
     if ($accion === 'actualizar_perfil') {
+        // Valida y actualiza datos de perfil (nombre/email).
         $nombre = trim($_POST['nombre'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $errores = [];
@@ -73,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errores)) {
+            // Verifica unicidad de email para evitar colisiones con otros usuarios.
             $stmt = $pdo->prepare('SELECT id FROM usuarios WHERE email = :email AND id != :id LIMIT 1');
             $stmt->execute([
                 'email' => $email,
@@ -105,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($accion === 'cambiar_password') {
+        // Valida password actual, reglas mínimas y actualización de hash.
         $actual = $_POST['password_actual'] ?? '';
         $nueva = $_POST['password_nueva'] ?? '';
         $repetir = $_POST['password_repetir'] ?? '';
@@ -147,9 +157,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($accion === 'guardar_preferencias') {
+        // Permite reset total o guardado de preferencias de dashboard/UI/idioma.
         $reset = isset($_POST['reset_preferencias']);
 
         if ($reset) {
+            // Limpia preferencias persistidas para volver a valores por defecto.
             preferencias_usuario_delete($pdo, 'dashboard.filtro.equipo');
             preferencias_usuario_delete($pdo, 'dashboard.filtro.periodo');
             preferencias_usuario_delete($pdo, 'dashboard.filtro.operacion');
@@ -168,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pref_densidad = $_POST['pref_densidad'] ?? 'Media';
         $pref_idioma = $_POST['pref_idioma'] ?? 'es';
 
-        // Normalizamos valores que llegan traducidos al inglés
+        // Normaliza valores recibidos en inglés hacia etiquetas internas en español.
         if (isset($map_equipo_en_es[$pref_equipo])) {
             $pref_equipo = $map_equipo_en_es[$pref_equipo];
         }
@@ -187,6 +199,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($map_idioma_label[$pref_idioma])) {
             $pref_idioma = $map_idioma_label[$pref_idioma];
         }
+
+        // Valida que todo pertenezca a catálogos permitidos.
         $errores = [];
 
         if (!in_array($pref_equipo, $equipos_validos, true)) {
@@ -220,6 +234,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         preferencias_usuario_set($pdo, 'ui.tema', $pref_tema);
         preferencias_usuario_set($pdo, 'ui.densidad', $pref_densidad);
         preferencias_usuario_set($pdo, 'ui.idioma', $pref_idioma);
+
+        // Aplica idioma inmediatamente en sesión para la respuesta actual.
         idioma_establecer($pref_idioma);
 
         flash_set('config_success', 'Preferencias guardadas y listas para aplicarse en el dashboard.');
@@ -228,6 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Carga preferencias efectivas para renderizado de selects en formularios.
 $pref_equipo = preferencias_usuario_get($pdo, 'dashboard.filtro.equipo') ?? 'Todos';
 if (!in_array($pref_equipo, $equipos_validos, true)) {
     $pref_equipo = 'Todos';

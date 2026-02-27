@@ -1,3 +1,23 @@
+/*
+ * Archivo: js/script.js
+ * Rol: interacciones globales del frontend.
+ * Incluye: favoritos de menú, modal de confirmación, drag&drop de kanban,
+ *          orden de widgets del dashboard y utilidades de conteo/estado visual.
+ *
+ * Índice de funciones principales:
+ * - toggle_favorito(nombre): añade o quita elementos del listado de favoritos.
+ * - actualizar_menu(): renderiza el menú de favoritos en el sidebar.
+ * - cerrarModal()/abrirModal(mensaje): controlan el modal de confirmación global.
+ * - limpiarZonasActivas()/resolverTarjetaArrastrada(e): utilidades del drag&drop kanban.
+ * - actualizarModoKanban(): activa/desactiva modo edición del tablero kanban.
+ * - inicializarOrdenDashboard(...): habilita reordenado de widgets en dashboard.
+ * - obtenerItems()/guardarOrden()/aplicarOrdenGuardado(): persistencia y restauración del orden.
+ * - limpiarDrag()/moverPlaceholder()/procesarFrame()/onMouseUp()/iniciarDrag(): ciclo completo de drag para widgets.
+ * - mostrarEstadoOrden(mensaje, esError): feedback visual de guardado/reset de orden.
+ * - estaEditandoDashboard()/actualizarModoDashboard(): estado de edición de dashboard.
+ * - actualizarContadores(): recalcula contadores de tarjetas por columna en kanban.
+ */
+
 let favoritos = [];
 
 function toggle_favorito(nombre) {
@@ -120,7 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let tarjetaArrastrada = null;
     let modoEdicionKanban = false;
 
-    // 1. Eventos para las TARJETAS (lo que arrastras)
+    // 1) Configuración de drag para tarjetas de prospectos.
+    // Solo se habilita cuando el usuario activa "Editar orden" en kanban.
     tarjetas.forEach(tarjeta => {
         
         tarjeta.addEventListener('dragstart', (event) => {
@@ -129,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Guarda referencia de la tarjeta en arrastre y su estado original.
             tarjetaArrastrada = tarjeta;
             tarjeta.classList.add('arrastrando');
             const estadoOrigen = tarjeta.closest('.kanban_columna')?.dataset.estado || '';
@@ -147,10 +169,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const limpiarZonasActivas = () => {
+        // Limpia resaltado visual de columnas candidatas durante el drag.
         columnas.forEach(col => col.classList.remove('zona_activa'));
     };
 
     const resolverTarjetaArrastrada = (e) => {
+        // Recupera tarjeta arrastrada por referencia directa o por dataTransfer id.
         let tarjetaDestino = tarjetaArrastrada || document.querySelector('.arrastrando');
 
         if (!tarjetaDestino && e.dataTransfer) {
@@ -164,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const guardarCambioEstado = async (id, estado) => {
+        // Persiste en backend el nuevo estado del prospecto tras mover tarjeta.
         const params = new URLSearchParams(window.location.search);
         const seccion = params.get('seccion') || '';
         const endpoint = `secciones/${seccion}.php`;
@@ -195,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('Respuesta invalida del servidor al guardar.');
         }
 
+        // Se valida HTTP y contrato JSON de respuesta para mostrar errores claros.
         if (!response.ok) {
             throw new Error(data?.mensaje || 'No se pudo guardar el cambio de estado.');
         }
@@ -205,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.addEventListener('dragover', (e) => {
+        // Permite drop sobre columnas y marca zona activa.
         if (!modoEdicionKanban) {
             return;
         }
@@ -235,6 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('drop', async (e) => {
+        // Al soltar: mueve visualmente la tarjeta y luego intenta persistir en servidor.
+        // Si falla, revierte al estado/columna de origen.
         if (!modoEdicionKanban) {
             return;
         }
@@ -280,6 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const actualizarModoKanban = () => {
+        // Activa/desactiva atributo draggable y sincroniza texto del botón.
         tarjetas.forEach(tarjeta => {
             tarjeta.setAttribute('draggable', modoEdicionKanban ? 'true' : 'false');
         });
@@ -315,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const guardarOrdenDashboardServidor = async (kpis, panels) => {
+        // Guarda en backend el orden de tarjetas KPI y paneles para el usuario actual.
         const body = new URLSearchParams();
         body.append('dashboard_orden_accion', 'guardar');
         body.append('kpis', JSON.stringify(kpis));
@@ -335,6 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const resetOrdenDashboardServidor = async () => {
+        // Elimina en backend preferencias de orden para volver al layout por defecto.
         const body = new URLSearchParams();
         body.append('dashboard_orden_accion', 'reset');
 
@@ -353,6 +385,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const inicializarOrdenDashboard = (selectorContenedor, selectorItems, storageKey, estaEditando, ordenServidor) => {
+        // Motor de drag por mouse para reordenar widgets dentro de un contenedor.
+        // Soporta:
+        // - carga orden servidor/localStorage
+        // - placeholder visual durante arrastre
+        // - persistencia de orden local
         const contenedor = document.querySelector(selectorContenedor);
         if (!contenedor) {
             return;
@@ -368,6 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let framePendiente = false;
 
         const guardarOrden = () => {
+            // Serializa orden actual por data-dashboard-card.
             const orden = obtenerItems()
                 .map(item => item.dataset.dashboardCard)
                 .filter(Boolean);
@@ -380,6 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const aplicarOrden = ids => {
+            // Reordena nodos según lista de ids recibida.
             if (!Array.isArray(ids)) {
                 return;
             }
@@ -396,6 +435,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const aplicarOrdenGuardado = () => {
+            // Prioridad de carga de orden:
+            // 1) servidor (preferencia persistida)
+            // 2) localStorage (fallback local)
             if (Array.isArray(ordenServidor) && ordenServidor.length > 0) {
                 aplicarOrden(ordenServidor);
                 localStorage.setItem(storageKey, JSON.stringify(ordenServidor));
@@ -418,6 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const limpiarDrag = () => {
+            // Cierra ciclo de drag: restaura estilos, sustituye placeholder y guarda orden.
             if (!itemArrastrado) {
                 return;
             }
@@ -440,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const moverPlaceholder = (clientX, clientY) => {
+            // Decide posición del placeholder comparando cursor vs mitad del item objetivo.
             if (!placeholder) {
                 return;
             }
@@ -470,6 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const procesarFrame = () => {
+            // Frame de animación: mueve item flotante + recalcula placeholder.
             framePendiente = false;
 
             if (!itemArrastrado) {
@@ -496,6 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const onMouseUp = () => {
+            // Finaliza drag con mouseup global.
             if (!itemArrastrado) {
                 return;
             }
@@ -506,6 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const iniciarDrag = (item, event) => {
+            // Inicializa drag manual: crea placeholder y mueve item al body para flotación.
             const rect = item.getBoundingClientRect();
             offsetX = event.clientX - rect.left;
             offsetY = event.clientY - rect.top;
@@ -536,6 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
         aplicarOrdenGuardado();
 
         contenedor.addEventListener('mousedown', event => {
+            // Ignora drag cuando no está en modo edición o al interactuar con controles.
             if (!estaEditando()) {
                 return;
             }
@@ -562,6 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let temporizadorEstadoOrden = null;
 
     const mostrarEstadoOrden = (mensaje, esError = false) => {
+        // Mensajería breve en UI para confirmar guardado/reset de orden.
         if (!estadoOrden) {
             return;
         }
@@ -582,6 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const estaEditandoDashboard = () => modoEdicionDashboard;
 
     const actualizarModoDashboard = () => {
+        // Sincroniza clase editando en contenedores y etiqueta del botón principal.
         const contKpis = document.querySelector('.dashboard_kpis');
         const contPaneles = document.querySelector('.dashboard_grid');
 
@@ -603,6 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarModoDashboard();
 
             if (!modoEdicionDashboard) {
+                // Al salir de modo edición: persiste orden actual en servidor.
                 const ordenKpis = Array.from(document.querySelectorAll('.dashboard_kpis .kpi_card[data-dashboard-card]')).map(el => el.dataset.dashboardCard);
                 const ordenPanels = Array.from(document.querySelectorAll('.dashboard_grid .panel_panel[data-dashboard-card]')).map(el => el.dataset.dashboardCard);
 
@@ -619,6 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnResetOrden) {
         btnResetOrden.addEventListener('click', async () => {
+            // Limpia orden local/servidor y recarga para reconstruir layout base.
             localStorage.removeItem('tinoprop.dashboard.kpis.order');
             localStorage.removeItem('tinoprop.dashboard.panels.order');
 

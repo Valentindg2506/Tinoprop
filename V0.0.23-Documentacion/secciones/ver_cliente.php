@@ -2,6 +2,11 @@
 /* Seccion: Detalle de Cliente
    Descripcion: Ficha editable con datos de MySQL
 */
+/*
+ * Sección: Ver cliente
+ * Rol: mostrar ficha completa del cliente, permitir edición de datos y notas.
+ * Acciones: guardar_cambios, guardar_nota y eliminar_cliente.
+ */
 require_once __DIR__ . '/../inc/bootstrap.php';
 
 $pdo = db();
@@ -10,8 +15,10 @@ $origen = $_GET['origen'] ?? 'clientes-vendedor';
 $mensaje_error = flash_get('error');
 $mensaje_exito = flash_get('success');
 
+// Controlador POST de la ficha: actualizar datos, guardar nota o eliminar cliente.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id_cliente > 0) {
     if (isset($_POST['guardar_cambios'])) {
+        // Recoge y valida datos editables del cliente.
         $errores = [];
         $nombre = trim($_POST['nombre'] ?? '');
         $apellido = trim($_POST['apellido'] ?? '');
@@ -45,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id_cliente > 0) {
             exit;
         }
 
+        // Prepara payload normalizado para UPDATE.
         $datos_update = [
             'nombre' => $nombre,
             'apellido' => $apellido,
@@ -80,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id_cliente > 0) {
     }
 
     if (isset($_POST['guardar_nota'])) {
+        // Inserta nota/aviso asociado a este cliente y al usuario de sesión.
         $nota_texto = trim($_POST['nota_nueva'] ?? '');
         $nota_tipo = $_POST['nota_tipo'] ?? 'Nota';
 
@@ -100,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id_cliente > 0) {
     }
 
     if (isset($_POST['eliminar_cliente'])) {
+        // Elimina notas relacionadas y luego borra el cliente.
         $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'cliente' AND entity_id = :id");
         $stmt->execute(['id' => $id_cliente]);
 
@@ -115,11 +125,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $id_cliente > 0) {
     exit;
 }
 
+// Carga datos principales de la ficha del cliente.
 $stmt = $pdo->prepare('SELECT * FROM clientes WHERE id = :id LIMIT 1');
 $stmt->execute(['id' => $id_cliente]);
 $datos_cliente = $stmt->fetch();
 
 if (!$datos_cliente) {
+    // Fallback defensivo para evitar errores de render si no existe registro.
     $datos_cliente = [
         'id' => $id_cliente,
         'nombre' => '',
@@ -136,6 +148,7 @@ if (!$datos_cliente) {
     ];
 }
 
+// Carga histórico de notas/avisos para el panel lateral de seguimiento.
 $stmt = $pdo->prepare(
     "SELECT tipo, texto, DATE_FORMAT(created_at, '%Y-%m-%d') AS fecha
      FROM notas
@@ -299,6 +312,9 @@ $notas_cliente = $stmt->fetchAll();
 </form>
 
 <script>
+// Índice JS del módulo:
+// - activarEdicion(idCampo): quita readonly y marca visualmente el campo en edición.
+
 function activarEdicion(idCampo) {
     let input = document.getElementById(idCampo);
 

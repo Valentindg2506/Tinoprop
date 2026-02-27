@@ -1,13 +1,22 @@
 <?php
+/*
+ * Archivo: api/imagenes.php
+ * Rol: endpoint JSON para gestionar galería de propiedades.
+ * Acciones soportadas: subir, obtener, marcar-principal, eliminar.
+ * Entrada: action por query/body + ficheros en $_FILES.
+ */
 require_once __DIR__ . '/../inc/bootstrap.php';
 
 header('Content-Type: application/json');
 
 try {
-    // Detectar acción desde GET o POST (o del body JSON)
+    // Resolve de acción compatible con:
+    // - query string (?action=...)
+    // - formulario POST
+    // - body JSON (fetch)
     $action = $_GET['action'] ?? $_POST['action'] ?? null;
     
-    // Si es JSON en body, decodificar
+    // Si no vino por GET/POST, intenta extraer action desde JSON body.
     if (!$action && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $json = json_decode(file_get_contents('php://input'), true);
         $action = $json['action'] ?? null;
@@ -19,8 +28,10 @@ try {
         exit;
     }
 
+    // Router de acciones para galería.
     switch ($action) {
         case 'subir':
+            // Subida de imagen(es) para una propiedad concreta.
             $propiedad_id = (int) ($_POST['propiedad_id'] ?? 0);
 
             if (!$propiedad_id) {
@@ -29,23 +40,24 @@ try {
                 exit;
             }
 
+            // Admite dos contratos de subida: archivo único o array imagenes[].
             if (!isset($_FILES['archivo']) && !isset($_FILES['imagenes'])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'error' => 'Archivo no especificado']);
                 exit;
             }
 
-            // Manejar tanto 'archivo' como 'imagenes[]'
+            // Normaliza entrada de archivos para procesar de forma uniforme.
             $files = $_FILES['archivo'] ?? $_FILES['imagenes'] ?? null;
             $ids = [];
             $errores = [];
 
-            // Si es un único archivo como array simple
+            // Si viene archivo único, lo convierte a colección homogénea.
             if (isset($files['name']) && !is_array($files['name'])) {
                 $files = [$files];
             }
 
-            // Procesar múltiples archivos
+            // Rama principal: procesa múltiples archivos imagenes[].
             if (is_array($files['name'] ?? [])) {
                 foreach ($files['name'] as $idx => $filename) {
                     if ($files['error'][$idx] !== UPLOAD_ERR_OK) {
@@ -61,6 +73,7 @@ try {
                         'size' => $files['size'][$idx],
                     ];
 
+                    // Delega validación MIME + guardado físico + persistencia SQL al helper.
                     $id = imagen_subir($pdo, $propiedad_id, $file);
                     if ($id) {
                         $ids[] = $id;
@@ -69,7 +82,7 @@ try {
                     }
                 }
             } else {
-                // Archivo único
+                // Rama fallback: archivo único en campo "archivo".
                 $file = [
                     'name' => $_FILES['archivo']['name'] ?? '',
                     'type' => $_FILES['archivo']['type'] ?? '',
@@ -87,6 +100,7 @@ try {
             }
 
             if (count($ids) > 0) {
+                // Respuesta parcial/total de éxito con detalle de fallos por archivo.
                 echo json_encode([
                     'success' => true,
                     'ids' => $ids,
@@ -104,6 +118,7 @@ try {
             break;
 
         case 'obtener':
+            // Devuelve lista de imágenes de una propiedad ordenadas por principal/fecha.
             $propiedad_id = (int) ($_GET['propiedad_id'] ?? 0);
 
             if (!$propiedad_id) {
@@ -117,7 +132,8 @@ try {
             break;
 
         case 'marcar-principal':
-            // Para JSON en body
+            // Marca una imagen como portada (y desmarca las demás de esa propiedad).
+            // Acepta ID por JSON o POST.
             $json = json_decode(file_get_contents('php://input'), true);
             $imagen_id = (int) ($json['id'] ?? $_POST['imagen_id'] ?? 0);
 
@@ -138,7 +154,8 @@ try {
             break;
 
         case 'eliminar':
-            // Para JSON en body
+            // Elimina imagen de base de datos y archivo físico asociado.
+            // Acepta ID por JSON o POST.
             $json = json_decode(file_get_contents('php://input'), true);
             $imagen_id = (int) ($json['id'] ?? $_POST['imagen_id'] ?? 0);
 
@@ -159,11 +176,13 @@ try {
             break;
 
         default:
+            // Acción no reconocida.
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Acción no válida']);
             break;
     }
 } catch (\Exception $e) {
+    // Falla inesperada: reporta 500 para diagnóstico del cliente.
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }

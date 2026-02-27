@@ -1,10 +1,15 @@
-CREATE DATABASE IF NOT EXISTS tinoprop
+-- Archivo: database/tinoprop.sql
+-- Rol: script de inicialización de base de datos de TinoProp.
+-- Contenido: creación de BD, tablas principales, índices y datos semilla.
+
+CREATE DATABASE tinoprop
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE tinoprop;
 
-CREATE TABLE IF NOT EXISTS usuarios (
+-- Tabla de usuarios del sistema (autenticación y roles).
+CREATE TABLE usuarios (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
@@ -13,7 +18,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS clientes (
+-- Tabla maestra de clientes (comprador/vendedor) con datos de negocio.
+CREATE TABLE clientes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tipo ENUM('vendedor','comprador') NOT NULL,
     nombre VARCHAR(100) NOT NULL,
@@ -31,7 +37,8 @@ CREATE TABLE IF NOT EXISTS clientes (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS prospectos (
+-- Pipeline comercial de prospectos para vistas kanban.
+CREATE TABLE prospectos (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tipo ENUM('vendedor','comprador') NOT NULL,
     nombre VARCHAR(120) NOT NULL,
@@ -42,7 +49,8 @@ CREATE TABLE IF NOT EXISTS prospectos (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS propiedades (
+-- Inventario interno de propiedades de venta/alquiler.
+CREATE TABLE propiedades (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     equipo ENUM('vendedor','comprador') NOT NULL,
     titulo VARCHAR(150) NOT NULL,
@@ -65,7 +73,7 @@ CREATE TABLE IF NOT EXISTS propiedades (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS notas (
+CREATE TABLE notas (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     entity_type ENUM('cliente','propiedad') NOT NULL,
     entity_id INT UNSIGNED NOT NULL,
@@ -119,8 +127,8 @@ VALUES
 ('propiedad', 1, 'Nota', 'Cliente interesado en visita el jueves.', 1),
 ('propiedad', 1, 'Aviso', 'Revisar certificado energetico.', 1);
 
--- Propiedades obtenidas via scraping externo (Habitaclia)
-CREATE TABLE IF NOT EXISTS scraped_propiedades (
+-- Propiedades obtenidas por scrappear de portales inmobiliarios, para pruebas y desarrollo de funcionalidades de importacion y analisis de datos.  
+CREATE TABLE scraped_propiedades (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     fuente VARCHAR(50) NOT NULL,
     titulo VARCHAR(255) NOT NULL,

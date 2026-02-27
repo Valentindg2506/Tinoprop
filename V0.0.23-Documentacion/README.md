@@ -20,5 +20,5 @@ Añade preferencia de idioma (Español/Inglés) a la app completa. Se apoya en t
 
 ## Notas de despliegue
 1) No hay dependencias nuevas. El cambio es solo PHP/HTML.
-2) Si necesitas ampliar cobertura de traducciones, agrega pares español→inglés en `inc/i18n.php`.
+2) Si necesitas ampliar cobertura de traducciones, agrega pares español→inglés en `inc/idioma.php`.
 3) El tema y densidad se mantienen como en V2.0; el idioma se gestiona de forma independiente.

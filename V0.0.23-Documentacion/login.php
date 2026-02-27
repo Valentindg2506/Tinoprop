@@ -1,23 +1,36 @@
 <?php
+/*
+ * Archivo: login.php
+ * Rol: autenticación de usuarios.
+ * Flujo: valida credenciales por POST, consulta tabla usuarios, verifica password_hash,
+ *        crea sesión y redirige a index.php.
+ */
 require_once __DIR__ . '/inc/bootstrap.php';
 
 $mensaje = '';
 
+// Si ya existe sesión activa, evita mostrar login y redirige al panel principal.
 if (!empty($_SESSION['usuario'])) {
     header('Location: index.php');
     exit;
 }
 
+// Procesa autenticación cuando el formulario se envía por POST.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Lee credenciales del formulario (email con trim para evitar espacios accidentales).
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
+    // Validación mínima de entrada antes de consultar DB.
     if ($email !== '' && $password !== '') {
         $pdo = db();
+
+        // Busca usuario por email y obtiene hash de contraseña para verificar.
         $stmt = $pdo->prepare('SELECT id, nombre, email, password_hash, rol FROM usuarios WHERE email = :email LIMIT 1');
         $stmt->execute(['email' => $email]);
         $usuario = $stmt->fetch();
 
+        // Si hash coincide, inicializa sesión con los datos de contexto necesarios.
         if ($usuario && password_verify($password, $usuario['password_hash'])) {
             $_SESSION['usuario'] = [
                 'id' => $usuario['id'],
@@ -30,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Mensaje genérico para no revelar si falló email o contraseña.
     $mensaje = 'Credenciales invalidas.';
 }
 ?>

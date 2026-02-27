@@ -2,11 +2,19 @@
 /* Seccion: Busqueda Avanzada (scraping Habitaclia Valencia)
    Descripcion: Permite filtrar propiedades obtenidas via scraping y almacenadas en cache.
 */
+/*
+ * Sección: Búsqueda avanzada
+ * Rol: consultar propiedades scrapeadas con filtros combinados y orden dinámico.
+ * Fuente de datos: tabla scraped_propiedades.
+ * Flujo: normaliza filtros -> arma WHERE dinámico -> ejecuta SQL -> renderiza tarjetas.
+ */
 require_once __DIR__ . '/../inc/bootstrap.php';
 
 $pdo = db();
+// Garantiza disponibilidad de la tabla cacheada de scraping.
 scraped_propiedades_asegurar_tabla($pdo);
 
+// Normaliza todos los filtros de entrada (texto, numéricos y orden).
 $filtros = [
     'q' => trim($_GET['q'] ?? ''),
     'zona' => trim($_GET['zona'] ?? ''),
@@ -18,14 +26,17 @@ $filtros = [
     'orden' => $_GET['orden'] ?? 'recientes',
 ];
 
+// Base del WHERE: acotar por ciudad para mantener foco de negocio (Valencia).
 $where = ['ciudad = :ciudad'];
 $params = ['ciudad' => 'Valencia'];
 
+// Filtro textual amplio sobre campos de título, descripción y ubicación.
 if ($filtros['q'] !== '') {
     $where[] = '(titulo LIKE :q OR descripcion LIKE :q OR zona LIKE :q OR ubicacion LIKE :q)';
     $params['q'] = '%' . $filtros['q'] . '%';
 }
 
+// Filtros opcionales acumulativos.
 if ($filtros['zona'] !== '') {
     $where[] = 'zona LIKE :zona';
     $params['zona'] = '%' . $filtros['zona'] . '%';
@@ -56,6 +67,7 @@ if ($filtros['banos'] !== null) {
     $params['banos'] = $filtros['banos'];
 }
 
+// Estrategia de ordenación seleccionable desde UI.
 $order = 'scraped_at DESC';
 if ($filtros['orden'] === 'precio_asc') {
     $order = 'precio IS NULL, precio ASC';
@@ -65,6 +77,7 @@ if ($filtros['orden'] === 'precio_asc') {
     $order = 'metros IS NULL, metros DESC';
 }
 
+// Consulta final limitada para evitar sobrecarga de render en frontend.
 $sql = 'SELECT id, fuente, titulo, tipo, operacion, precio, moneda, ubicacion, zona, ciudad, habitaciones, banos, metros, descripcion, imagen_url, imagenes_json, ascensor, url, scraped_at
         FROM scraped_propiedades
         WHERE ' . implode(' AND ', $where) . '
@@ -75,6 +88,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $propiedades = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+// Métricas rápidas de contexto del dataset cacheado.
 $stmtStats = $pdo->prepare('SELECT COUNT(*) AS total, MAX(scraped_at) AS last_run FROM scraped_propiedades WHERE ciudad = :ciudad');
 $stmtStats->execute(['ciudad' => 'Valencia']);
 $stats = $stmtStats->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'last_run' => null];

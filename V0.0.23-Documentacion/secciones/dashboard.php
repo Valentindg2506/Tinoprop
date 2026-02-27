@@ -2,13 +2,20 @@
 /* Seccion: Dashboard CRM
    Descripcion: Resumen general con filtros y datos reales
 */
+/*
+ * Sección: Dashboard
+ * Rol: mostrar KPIs, actividad, embudo y recordatorios próximos.
+ * Incluye: filtros persistentes por usuario y guardado de orden de widgets por POST.
+ */
 require_once __DIR__ . '/../inc/bootstrap.php';
 
+// Catálogo de valores permitidos para filtros del dashboard.
 $pdo = db();
 $equipos_validos = ['Todos', 'Vendedor', 'Comprador'];
 $periodos_validos = ['Mes actual', 'Ultimos 90 dias', 'Ano'];
 $operaciones_validas = ['Venta y Alquiler', 'Venta', 'Alquiler'];
 
+// Endpoint POST interno: guarda o resetea el orden visual de KPIs y paneles.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dashboard_orden_accion'])) {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -18,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dashboard_orden_accio
         $kpis = trim($_POST['kpis'] ?? '[]');
         $panels = trim($_POST['panels'] ?? '[]');
 
+        // Decodifica arrays JSON enviados desde frontend para el orden de widgets.
         $kpis_arr = json_decode($kpis, true);
         $panels_arr = json_decode($panels, true);
 
@@ -27,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dashboard_orden_accio
             exit;
         }
 
+        // Valida formato de cada identificador de tarjeta para evitar entradas inválidas.
         $valida = static function (array $items): bool {
             foreach ($items as $item) {
                 if (!is_string($item) || !preg_match('/^[a-z0-9\-]+$/', $item)) {
@@ -43,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dashboard_orden_accio
             exit;
         }
 
+        // Persiste el orden por usuario en preferencias.
         preferencias_usuario_set($pdo, 'dashboard.kpis.order', json_encode(array_values($kpis_arr)));
         preferencias_usuario_set($pdo, 'dashboard.panels.order', json_encode(array_values($panels_arr)));
 
@@ -51,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dashboard_orden_accio
     }
 
     if ($accion === 'reset') {
+        // Elimina preferencias guardadas para restaurar orden por defecto.
         preferencias_usuario_delete($pdo, 'dashboard.kpis.order');
         preferencias_usuario_delete($pdo, 'dashboard.panels.order');
 
@@ -63,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dashboard_orden_accio
     exit;
 }
 
+// Carga valores por defecto de filtros desde preferencias del usuario.
 $pref_equipo = preferencias_usuario_get($pdo, 'dashboard.filtro.equipo') ?? 'Todos';
 if (!in_array($pref_equipo, $equipos_validos, true)) {
     $pref_equipo = 'Todos';
@@ -76,6 +88,7 @@ if (!in_array($pref_operacion, $operaciones_validas, true)) {
     $pref_operacion = 'Venta y Alquiler';
 }
 
+// Si no llega filtro por URL, se usa el preferido guardado.
 $filtro_equipo = $_GET['equipo'] ?? $pref_equipo;
 $filtro_periodo = $_GET['periodo'] ?? $pref_periodo;
 $filtro_operacion = $_GET['operacion'] ?? $pref_operacion;
@@ -90,6 +103,7 @@ if (!in_array($filtro_operacion, $operaciones_validas, true)) {
     $filtro_operacion = 'Venta y Alquiler';
 }
 
+// Mapeo de filtros de UI a valores usados en la base de datos.
 $equipo_db = null;
 if ($filtro_equipo === 'Vendedor') {
     $equipo_db = 'vendedor';
@@ -104,6 +118,7 @@ if ($filtro_operacion === 'Venta') {
     $operacion_db = 'alquiler';
 }
 
+// Fecha mínima de referencia según periodo seleccionado.
 $desde = null;
 if ($filtro_periodo === 'Mes actual') {
     $desde = date('Y-m-01');
@@ -113,6 +128,7 @@ if ($filtro_periodo === 'Mes actual') {
     $desde = date('Y-01-01');
 }
 
+// Condiciones dinámicas para reutilizar en consultas de KPIs.
 $condicion_equipo_clientes = $equipo_db ? ' AND tipo = :equipo' : '';
 $condicion_equipo_prop = $equipo_db ? ' AND equipo = :equipo' : '';
 $condicion_fecha = $desde ? ' AND created_at >= :desde' : '';
@@ -125,9 +141,12 @@ if ($equipo_db) {
 if ($desde) {
     $params['desde'] = $desde;
 }
+
+// KPI 1: clientes activos bajo filtros.
 $stmt->execute($params);
 $clientes_activos = (int) $stmt->fetchColumn();
 
+// KPI 2: total de prospectos bajo filtros.
 $stmt = $pdo->prepare('SELECT COUNT(*) FROM prospectos WHERE 1=1' . $condicion_equipo_clientes . $condicion_fecha);
 $stmt->execute($params);
 $prospectos_total = (int) $stmt->fetchColumn();
@@ -135,6 +154,8 @@ $prospectos_total = (int) $stmt->fetchColumn();
 $stmt = $pdo->prepare(
     'SELECT COUNT(*) FROM propiedades WHERE operacion = :operacion' . $condicion_equipo_prop . $condicion_fecha
 );
+
+// KPI 3/4: propiedades de venta y alquiler bajo filtros.
 $params_prop = ['operacion' => 'venta'];
 if ($equipo_db) {
     $params_prop['equipo'] = $equipo_db;
@@ -149,6 +170,7 @@ $params_prop['operacion'] = 'alquiler';
 $stmt->execute($params_prop);
 $propiedades_alquiler = (int) $stmt->fetchColumn();
 
+// Estructura final de KPIs usada por la vista.
 $kpis = [
     ["titulo" => "Clientes activos", "valor" => (string) $clientes_activos, "detalle" => "Filtro: " . $filtro_equipo],
     ["titulo" => "Prospectos", "valor" => (string) $prospectos_total, "detalle" => "Periodo: " . $filtro_periodo],
@@ -169,6 +191,7 @@ $mapa_estados = [
     'Cierre' => ['descartado'],
 ];
 
+// Construcción de embudo comercial agregando estados del pipeline.
 $conteo_estados = [];
 foreach ($prospectos_por_estado as $fila) {
     $conteo_estados[$fila['estado']] = (int) $fila['total'];
@@ -199,6 +222,7 @@ foreach ($mapa_estados as $etapa => $estados) {
     ];
 }
 
+// Panel de alertas (últimos avisos) y actividad reciente.
 $stmt = $pdo->query(
     "SELECT texto, DATE_FORMAT(created_at, '%H:%i') AS hora
      FROM notas WHERE tipo = 'Aviso'
@@ -212,6 +236,7 @@ $stmt = $pdo->query(
 );
 $actividad = $stmt->fetchAll();
 
+// Panel de propiedades destacadas (top por visitas).
 $query_destacadas = 'SELECT id, titulo, visitas, ofertas, operacion, equipo FROM propiedades WHERE 1=1';
 $params_destacadas = [];
 if ($operacion_db) {
@@ -227,7 +252,7 @@ $stmt = $pdo->prepare($query_destacadas);
 $stmt->execute($params_destacadas);
 $destacadas = $stmt->fetchAll();
 
-// Obtener próximos recordatorios (próximos 7 días)
+// Widget: próximos recordatorios del usuario en los siguientes 7 días.
 recordatorios_asegurar_tabla($pdo);
 $usuario_id = (int) ($_SESSION['usuario']['id'] ?? 0);
 $fecha_hoy = date('Y-m-d');
@@ -250,6 +275,7 @@ $stmt->execute([
 ]);
 $proximos_recordatorios = $stmt->fetchAll();
 
+// Orden guardado por usuario para restaurar distribución de tarjetas en frontend.
 $orden_kpis_guardado = preferencias_usuario_get($pdo, 'dashboard.kpis.order') ?? '[]';
 $orden_panels_guardado = preferencias_usuario_get($pdo, 'dashboard.panels.order') ?? '[]';
 ?>

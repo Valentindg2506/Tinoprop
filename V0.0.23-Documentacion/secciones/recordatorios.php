@@ -1,11 +1,18 @@
 <?php
+/*
+ * Sección: Recordatorios
+ * Rol: vista de calendario mensual y CRUD de recordatorios de usuario.
+ * Integración: consume api/recordatorios.php para crear, editar y eliminar.
+ */
 require_once __DIR__ . '/../inc/bootstrap.php';
 
+// Parámetros de navegación del calendario (mes/año) y fecha activa.
 $mes_actual = isset($_GET['mes']) ? (int) $_GET['mes'] : date('n');
 $ano_actual = isset($_GET['ano']) ? (int) $_GET['ano'] : date('Y');
 
 $fecha_seleccionada = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 
+// Carga recordatorios del mes para construir badges por día en el calendario.
 $recordatorios_mes = recordatorios_por_mes($pdo, $mes_actual, $ano_actual);
 
 $recordatorios_por_dia = [];
@@ -17,8 +24,10 @@ foreach ($recordatorios_mes as $r) {
     $recordatorios_por_dia[$dia]++;
 }
 
+// Carga recordatorios de la fecha seleccionada para la lista principal.
 $recordatorios_hoy = recordatorios_por_fecha($pdo, $fecha_seleccionada);
 
+// Datos de construcción del calendario mensual (día inicial y cantidad de días).
 $primer_dia_mes = date('w', strtotime("$ano_actual-$mes_actual-01"));
 $dias_en_mes = (int) date('t', strtotime("$ano_actual-$mes_actual-01"));
 
@@ -188,6 +197,13 @@ $tipos_recordatorio = ['Llamada', 'Visita', 'Reunión', 'Nota importante', 'Segu
 </div>
 
 <script>
+// Índice JS del módulo:
+// - click en día del calendario: actualiza fecha seleccionada y recarga vista.
+// - botón nuevo/cancelar: abre y cierra formulario.
+// - submit formulario: crea/actualiza recordatorio por API.
+// - editar: obtiene un recordatorio y precarga formulario.
+// - eliminar: borra un recordatorio por API con confirmación previa.
+
 document.addEventListener('DOMContentLoaded', function () {
     const calendario = document.querySelector('.tabla_calendario');
     const formulario = document.getElementById('formulario_recordatorio');
@@ -198,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let fechaSeleccionada = '<?php echo $fecha_seleccionada; ?>';
 
-    // Navegar a día en calendario
+    // Navegar a un día del calendario y reflejarlo en URL/estado visual.
     document.querySelectorAll('.tabla_calendario .dia').forEach(td => {
         td.addEventListener('click', function () {
             const fecha = this.dataset.fecha;
@@ -219,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Abrir formulario nuevo
+    // Abrir formulario en modo alta (limpia campos y usa fecha activa).
     btnNuevo.addEventListener('click', function () {
         document.getElementById('recordatorio_id').value = '';
         document.getElementById('recordatorio_fecha').value = fechaSeleccionada;
@@ -231,12 +247,12 @@ document.addEventListener('DOMContentLoaded', function () {
         formulario.classList.remove('oculto');
     });
 
-    // Cerrar formulario
+    // Cerrar formulario sin guardar cambios.
     btnCancelar.addEventListener('click', function () {
         formulario.classList.add('oculto');
     });
 
-    // Enviar formulario
+    // Guardar recordatorio: decide crear/actualizar según exista ID.
     formRecordatorio.addEventListener('submit', async function (e) {
         e.preventDefault();
 
@@ -276,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Editar recordatorio
+    // Editar recordatorio: carga datos desde API y rellena formulario.
     document.querySelectorAll('.btn_editar').forEach(btn => {
         btn.addEventListener('click', async function () {
             const id = this.dataset.id;
@@ -301,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Eliminar recordatorio
+    // Eliminar recordatorio tras confirmación del usuario.
     document.querySelectorAll('.btn_eliminar').forEach(btn => {
         btn.addEventListener('click', async function () {
             if (!confirm('¿Estás seguro de que quieres eliminar este recordatorio?')) return;

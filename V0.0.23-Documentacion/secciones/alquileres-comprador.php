@@ -2,6 +2,11 @@
 /* Seccion: Alquileres (Comprador)
    Descripcion: Tarjetas con propiedades en alquiler
 */
+/*
+ * Sección: Alquileres comprador
+ * Rol: alta, listado y baja de propiedades en alquiler para equipo comprador.
+ * Operaciones principales: crear_alquiler, eliminar_propiedad.
+ */
 require_once __DIR__ . '/../inc/bootstrap.php';
 
 $pdo = db();
@@ -9,8 +14,10 @@ $origen = 'alquileres-comprador';
 $mensaje_error = flash_get('error');
 $mensaje_exito = flash_get('success');
 
+// Controlador POST del módulo: alta y baja de propiedades en alquiler del equipo comprador.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['crear_alquiler'])) {
+        // Recoge y valida datos mínimos de alquiler.
         $errores = [];
         $titulo = trim($_POST['titulo'] ?? '');
         $tipo = trim($_POST['tipo'] ?? '');
@@ -41,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Inserta propiedad con operacion alquiler y periodo mensual.
         $stmt = $pdo->prepare(
             'INSERT INTO propiedades (equipo, titulo, tipo, ubicacion, direccion, metros, habitaciones, banos, precio, moneda, periodo, operacion, estado, referencia, descripcion)
              VALUES (:equipo, :titulo, :tipo, :ubicacion, :direccion, :metros, :habitaciones, :banos, :precio, :moneda, :periodo, :operacion, :estado, :referencia, :descripcion)'
@@ -66,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['eliminar_propiedad'])) {
+        // Elimina notas asociadas y luego la propiedad en alquiler.
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
             $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'propiedad' AND entity_id = :id");
@@ -81,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// Listado de alquileres del equipo comprador para tarjetas.
 $stmt = $pdo->prepare('SELECT id, titulo, tipo, ubicacion, metros, habitaciones, banos, precio, moneda, periodo, estado FROM propiedades WHERE equipo = :equipo AND operacion = :operacion ORDER BY id DESC');
 $stmt->execute([
     'equipo' => 'comprador',

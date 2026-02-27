@@ -1,5 +1,29 @@
 #!/usr/bin/env python3
 """
+Archivo: scripts/scrape_habitaclia.py
+Rol: scraper principal de Habitaclia para alimentar la búsqueda avanzada de TinoProp.
+
+Índice de funciones:
+- get_db_conn: abre conexión MySQL con variables de entorno TP_DB_*. 
+- ensure_table: crea/actualiza tabla scraped_propiedades.
+- build_page_url: construye URL paginada a partir de la URL base.
+- fetch_soup: descarga HTML y devuelve BeautifulSoup.
+- parse_price / parse_int: normalizan números desde texto libre.
+- parse_from_ldjson: extrae inmuebles desde scripts JSON-LD.
+- parse_from_cards: extrae inmuebles desde tarjetas HTML visibles.
+- dedupe_listings: unifica duplicados y combina campos complementarios.
+- normalize_listing: homogeneiza un registro al formato final de persistencia.
+- fetch_images: intenta obtener imágenes de detalle del anuncio.
+- normalize_image_url / pick_first_from_srcset / normalize_images: normalización de URLs de imágenes.
+- extract_meta: infiere habitaciones/baños/metros desde textos del anuncio.
+- guess_operacion / guess_tipo: deduce operación y tipo de inmueble.
+- _dump_debug_html: guarda HTML de depuración en /tmp.
+- ensure_absolute_url: convierte rutas relativas a URL absoluta.
+- upsert_listing: inserta/actualiza en scraped_propiedades por URL única.
+- scrape: orquesta el scraping completo por páginas.
+- parse_args: define argumentos CLI.
+- main: punto de entrada del script.
+
 Scraper de Habitaclia para TinoProp V1.8.
 
 - Obtiene listados de viviendas en Valencia (o la URL especificada)
@@ -95,6 +119,9 @@ def ensure_table(conn) -> None:
 
 
 def build_page_url(base_url: str, page: int) -> str:
+    # Habitaclia usa dos patrones de paginación según URL:
+    # - sufijo -N.htm
+    # - query param ?page=N
     if page <= 1:
         return base_url
 
@@ -107,6 +134,7 @@ def build_page_url(base_url: str, page: int) -> str:
 
 
 def fetch_soup(url: str, timeout: int = 20) -> Optional[BeautifulSoup]:
+    # Cabeceras "browser-like" para reducir bloqueos básicos por bot detection.
     headers = {
         "User-Agent": USER_AGENT,
         "Accept-Language": "es-ES,es;q=0.9",
@@ -119,6 +147,7 @@ def fetch_soup(url: str, timeout: int = 20) -> Optional[BeautifulSoup]:
         _dump_debug_html(resp.text, url, suffix="status")
         return None
     soup = BeautifulSoup(resp.text, "html.parser")
+    # Diagnóstico: si no aparecen contenedores esperados, guarda HTML para inspección.
     if not soup.find("article") and not soup.find("div", class_=re.compile("list-item", re.I)):
         _dump_debug_html(resp.text, url, suffix="nolisting")
     return soup
@@ -149,13 +178,14 @@ def parse_int(text: str) -> Optional[int]:
 
 def parse_from_ldjson(soup: BeautifulSoup) -> List[Dict]:
     listings: List[Dict] = []
+    # Fuente 1: datos estructurados JSON-LD (normalmente más limpios y completos).
     for script in soup.find_all("script", {"type": "application/ld+json"}):
         try:
             data = json.loads(script.string or "")
         except Exception:
             continue
 
-        # ItemList format
+        # Formato ItemList típico de listados inmobiliarios.
         if isinstance(data, dict) and data.get("@type") == "ItemList":
             for element in data.get("itemListElement", []):
                 item = element.get("item", {}) if isinstance(element, dict) else {}
@@ -193,6 +223,7 @@ def parse_from_ldjson(soup: BeautifulSoup) -> List[Dict]:
 
 def parse_from_cards(soup: BeautifulSoup) -> List[Dict]:
     listings: List[Dict] = []
+    # Fuente 2: parseo directo de tarjetas DOM como respaldo al JSON-LD.
     selectors = [
         "div.list-item",
         "article",
@@ -223,7 +254,7 @@ def parse_from_cards(soup: BeautifulSoup) -> List[Dict]:
                         img_candidate = m.group(1)
             img_url = normalize_image_url(img_candidate, href)
             images = [img_url] if img_url else []
-            # Extraer metadatos de m2, hab, baños desde el texto visible
+            # Extrae metadatos de m2/hab/baños desde texto visible de tarjeta.
             details_text = " ".join([
                 (card.get_text(" ", strip=True) or ""),
             ])
@@ -254,6 +285,8 @@ def parse_from_cards(soup: BeautifulSoup) -> List[Dict]:
 
 
 def dedupe_listings(listings: List[Dict]) -> List[Dict]:
+    # Une registros duplicados por URL combinando campos complementarios.
+    # Es clave porque una misma propiedad puede aparecer en JSON-LD y en tarjetas.
     def is_empty(value) -> bool:
         if value is None:
             return True
@@ -263,6 +296,7 @@ def dedupe_listings(listings: List[Dict]) -> List[Dict]:
         return False
 
     def merge_images(base: Dict, extra: Dict) -> None:
+        # Combina listas/imágenes sueltas manteniendo orden y sin repetir URLs.
         imgs = []
         for source in (
             base.get("imagenes") or [],
@@ -290,7 +324,7 @@ def dedupe_listings(listings: List[Dict]) -> List[Dict]:
                 if is_empty(current) or len(incoming.strip()) > len(str(current).strip()):
                     merged[field] = incoming
 
-        # Numéricos: preferir valores no nulos y razonables
+        # Numéricos: preferir no nulos y corregir outliers con rangos plausibles.
         for field in ["precio", "habitaciones", "banos", "metros"]:
             current = merged.get(field)
             incoming = extra.get(field)
@@ -329,6 +363,7 @@ def dedupe_listings(listings: List[Dict]) -> List[Dict]:
 
 
 def normalize_listing(raw: Dict, run_tag: str) -> Dict:
+    # Estandariza el registro al esquema final de BD y calcula hash de control.
     titulo = (raw.get("titulo") or "").strip()
     url = (raw.get("url") or "").strip()
     base_hash = f"{url}-{raw.get('precio')}-{titulo}".encode("utf-8", errors="ignore")
@@ -366,7 +401,7 @@ def fetch_images(url: str, max_items: int = 8) -> List[str]:
         if not soup:
             return []
 
-        # From meta tags
+        # Prioridad 1: meta tags sociales (og/twitter).
         metas = [
             soup.find("meta", property="og:image"),
             soup.find("meta", property="og:image:secure_url"),
@@ -376,7 +411,7 @@ def fetch_images(url: str, max_items: int = 8) -> List[str]:
             if tag and tag.get("content"):
                 images.append(normalize_image_url(tag.get("content"), url))
 
-        # From ld+json blocks inside detail page (if any)
+        # Prioridad 2: JSON-LD del detalle.
         for script in soup.find_all("script", {"type": "application/ld+json"}):
             try:
                 data = json.loads(script.string or "")
@@ -385,7 +420,7 @@ def fetch_images(url: str, max_items: int = 8) -> List[str]:
             imgs = normalize_images(data.get("image"), url)
             images.extend(imgs)
 
-        # From DOM images / sources
+        # Prioridad 3: imágenes del DOM (img/source/srcset).
         for img in soup.select("img[src], img[data-src], picture source[srcset]"):
             candidate = img.get("src") or img.get("data-src") or pick_first_from_srcset(img.get("srcset"))
             images.append(normalize_image_url(candidate, url))
@@ -393,7 +428,7 @@ def fetch_images(url: str, max_items: int = 8) -> List[str]:
     except Exception as exc:
         logging.debug("No se pudieron obtener imagenes para %s: %s", url, exc)
 
-    # Deduplicate preserving order
+    # Deduplica preservando orden para mantener una portada consistente.
     seen = set()
     final = []
     for im in images:
@@ -454,6 +489,7 @@ def extract_meta(text: str) -> Dict[str, Optional[int]]:
             return num
         return None
 
+    # Regex tolerantes a variaciones de escritura (m2/m², baños con n/ñ, etc.).
     metros_matches = re.findall(r"(\d+)\s*(?:m2|m²)", text, flags=re.IGNORECASE)
     hab_matches = re.findall(r"(\d+)\s*(?:hab(?:itaciones?)?)", text, flags=re.IGNORECASE)
     banos_matches = re.findall(r"(\d+)\s*ba(?:n|ñ)os?", text, flags=re.IGNORECASE)
@@ -506,11 +542,12 @@ def ensure_absolute_url(url: Optional[str]) -> Optional[str]:
 
 
 def upsert_listing(conn, listing: Dict) -> None:
+    # Convierte estructura Python a payload SQL y realiza UPSERT por URL única.
     payload = dict(listing)
     payload["imagenes_json"] = json.dumps(listing.get("imagenes") or [])
     # Remove non-SQL fields that would break connector conversion
     payload.pop("imagenes", None)
-    # ascensor puede ser bool -> cast a int o None
+    # Normaliza bool de ascensor a tinyint para MySQL.
     if "ascensor" in payload:
         if payload["ascensor"] is True:
             payload["ascensor"] = 1
@@ -551,6 +588,7 @@ def upsert_listing(conn, listing: Dict) -> None:
 
 
 def scrape(base_url: str, pages: int, delay: float, run_tag: str, dry_run: bool = False) -> None:
+    # Bucle principal: descarga página, parsea, deduplica, enriquece imágenes y persiste.
     logging.info("Iniciando scraping base_url=%s pages=%s", base_url, pages)
     conn = get_db_conn()
     ensure_table(conn)
@@ -567,6 +605,7 @@ def scrape(base_url: str, pages: int, delay: float, run_tag: str, dry_run: bool 
         listings = dedupe_listings(listings)
 
         if not listings:
+            # Fallback a versión móvil cuando desktop devuelve DOM no parseable.
             alt_url = page_url.replace("www.", "m.", 1)
             logging.warning("Pagina %s sin listados parseados, probando version movil %s", page_url, alt_url)
             soup_alt = fetch_soup(alt_url)
@@ -579,6 +618,7 @@ def scrape(base_url: str, pages: int, delay: float, run_tag: str, dry_run: bool 
             normalized = normalize_listing(raw, run_tag)
             if not normalized.get("url"):
                 continue
+            # Si no hubo imágenes en listado, intenta extraerlas desde detalle.
             if not normalized.get("imagenes"):
                 images = fetch_images(normalized.get("url"))
                 normalized["imagenes"] = images
@@ -586,6 +626,7 @@ def scrape(base_url: str, pages: int, delay: float, run_tag: str, dry_run: bool 
                     normalized["imagen_url"] = images[0]
             if not normalized.get("imagen_url") and normalized.get("imagenes"):
                 normalized["imagen_url"] = normalized["imagenes"][0]
+            # DRY-RUN: valida pipeline sin escribir en DB.
             if dry_run:
                 logging.debug("[DRY-RUN] %s", normalized["titulo"])
                 continue

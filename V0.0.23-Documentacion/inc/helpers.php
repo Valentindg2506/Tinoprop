@@ -1,9 +1,23 @@
 <?php
+/*
+ * Archivo: inc/helpers.php
+ * Rol: utilidades transversales del backend.
+ * Grupos de funciones:
+ * 1) Utilidades de salida/formato (escape HTML, precio, clases de estado).
+ * 2) Mensajería flash y validaciones de formulario.
+ * 3) Preferencias por usuario (persistidas en BD).
+ * 4) CRUD de recordatorios.
+ * 5) Gestión de imágenes de propiedades.
+ * 6) Creación/ajuste de la tabla de propiedades scrapeadas.
+ */
+
+/* Escapa texto para mostrarlo en HTML sin ejecutar contenido peligroso. */
 function e(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 }
 
+/* Formatea un precio con separador de miles y sufijo de periodo (si aplica). */
 function format_price(float $precio, string $moneda, ?string $periodo): string
 {
     $formato = number_format($precio, 0, ',', '.');
@@ -21,6 +35,7 @@ function map_estado_clase(string $estado): string
     return strtolower(str_replace(' ', '_', $estado));
 }
 
+/* Determina la sección de origen de una propiedad para construir el enlace de retorno. */
 function obtener_origen_propiedad(string $operacion, string $equipo): string
 {
     if ($operacion === 'alquiler') {
@@ -39,6 +54,7 @@ function flash_set(string $key, string $message): void
     $_SESSION['flash'][$key] = $message;
 }
 
+/* Lee un mensaje flash de sesión y lo elimina (uso de una sola vez). */
 function flash_get(string $key): ?string
 {
     if (!isset($_SESSION['flash'][$key])) {
@@ -71,6 +87,7 @@ function validar_enum(string $valor, array $permitidos): bool
     return in_array($valor, $permitidos, true);
 }
 
+/* Crea la tabla de preferencias de usuario si todavía no existe. */
 function preferencias_asegurar_tabla(PDO $pdo): void
 {
     static $tabla_lista = false;
@@ -116,6 +133,7 @@ function preferencias_usuario_get(PDO $pdo, string $clave): ?string
     return (string) $valor;
 }
 
+/* Inserta o actualiza una preferencia clave/valor para el usuario de sesión. */
 function preferencias_usuario_set(PDO $pdo, string $clave, string $valor): void
 {
     $usuario_id = (int) ($_SESSION['usuario']['id'] ?? 0);
@@ -153,6 +171,7 @@ function preferencias_usuario_delete(PDO $pdo, string $clave): void
     ]);
 }
 
+/* Crea la tabla de recordatorios si no existe. */
 function recordatorios_asegurar_tabla(PDO $pdo): void
 {
     static $tabla_lista = false;
@@ -208,6 +227,7 @@ function recordatorio_crear(PDO $pdo, string $tipo, string $descripcion, string 
     return (int) $pdo->lastInsertId();
 }
 
+/* Devuelve todos los recordatorios del usuario para una fecha concreta. */
 function recordatorios_por_fecha(PDO $pdo, string $fecha): array
 {
     $usuario_id = (int) ($_SESSION['usuario']['id'] ?? 0);
@@ -257,6 +277,7 @@ function recordatorios_por_mes(PDO $pdo, int $mes, int $ano): array
     return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 }
 
+/* Recupera un recordatorio por ID validando que pertenezca al usuario de sesión. */
 function recordatorio_obtener(PDO $pdo, int $id): ?array
 {
     $usuario_id = (int) ($_SESSION['usuario']['id'] ?? 0);
@@ -306,6 +327,7 @@ function recordatorio_actualizar(PDO $pdo, int $id, string $tipo, string $descri
     return $resultado && $stmt->rowCount() > 0;
 }
 
+/* Elimina un recordatorio por ID para el usuario autenticado. */
 function recordatorio_eliminar(PDO $pdo, int $id): bool
 {
     $usuario_id = (int) ($_SESSION['usuario']['id'] ?? 0);
@@ -326,6 +348,7 @@ function recordatorio_eliminar(PDO $pdo, int $id): bool
 
 /* ===== FUNCIONES PARA IMÁGENES DE PROPIEDADES ===== */
 
+/* Crea la tabla de imágenes de propiedades y su relación con propiedades. */
 function imagenes_asegurar_tabla(PDO $pdo): void
 {
     static $tabla_lista = false;
@@ -397,6 +420,7 @@ function imagen_subir(PDO $pdo, int $propiedad_id, array $archivo): ?int
     return $resultado ? (int) $pdo->lastInsertId() : null;
 }
 
+/* Devuelve todas las imágenes de una propiedad priorizando la principal. */
 function imagenes_obtener_propiedad(PDO $pdo, int $propiedad_id): array
 {
     imagenes_asegurar_tabla($pdo);
@@ -428,6 +452,7 @@ function imagen_obtener_principal(PDO $pdo, int $propiedad_id): ?array
     return $resultado ?: null;
 }
 
+/* Elimina imagen en BD y, si existe, su archivo físico en disco. */
 function imagen_eliminar(PDO $pdo, int $id): bool
 {
     imagenes_asegurar_tabla($pdo);
@@ -478,6 +503,7 @@ function imagen_marcar_principal(PDO $pdo, int $imagen_id): bool
     return $resultado && $stmt->rowCount() > 0;
 }
 
+/* Crea/actualiza estructura de la tabla cacheada de propiedades scrapeadas. */
 function scraped_propiedades_asegurar_tabla(PDO $pdo): void
 {
     static $tabla_lista = false;

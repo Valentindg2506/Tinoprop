@@ -1,4 +1,9 @@
 <?php
+/*
+ * Sección: Prospectos vendedor
+ * Rol: tablero kanban para gestionar pipeline de prospectos del equipo vendedor.
+ * Acciones: mover_prospecto_drag, crear_prospecto, editar_prospecto, eliminar_prospecto.
+ */
 /* Seccion: Kanban de Prospectos (Vendedor)
     Descripcion: Tablero visual conectado a MySQL
 */
@@ -18,8 +23,10 @@ $origen = 'prospectos-vendedor';
 $mensaje_error = flash_get('error');
 $mensaje_exito = flash_get('success');
 
+// Controlador POST: movimiento drag en kanban + CRUD clásico del prospecto.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['mover_prospecto_drag'])) {
+        // Endpoint JSON para mover tarjetas entre columnas sin recargar la vista.
         header('Content-Type: application/json; charset=utf-8');
 
         $id_mover = (int) ($_POST['id'] ?? 0);
@@ -43,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['crear_prospecto'])) {
+        // Alta de prospecto con validación.
         $errores = [];
         $nombre = trim($_POST['nombre'] ?? '');
         $interes = trim($_POST['interes'] ?? '');
@@ -83,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['editar_prospecto'])) {
+        // Edición inline de prospecto existente.
         $id_editar = (int) ($_POST['id'] ?? 0);
         if ($id_editar > 0) {
             $errores = [];
@@ -125,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['eliminar_prospecto'])) {
+        // Eliminación definitiva del prospecto.
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
             $stmt = $pdo->prepare('DELETE FROM prospectos WHERE id = :id');
@@ -136,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Location: index.php?seccion=' . $origen);
     exit;
 }
+// Carga de datos para construir columnas y tarjetas del kanban.
 $stmt = $pdo->prepare('SELECT id, nombre, interes, estado, telefono FROM prospectos WHERE tipo = :tipo ORDER BY id DESC');
 $stmt->execute(['tipo' => 'vendedor']);
 $prospectos_db = $stmt->fetchAll();

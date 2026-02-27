@@ -1,20 +1,30 @@
 <?php
+/*
+ * Archivo: index.php
+ * Rol: contenedor principal de la aplicación (layout + menú lateral + enrutado por sección).
+ * Flujo: recibe ?seccion=..., verifica si existe el archivo en /secciones y lo incluye.
+ * Dependencias: inc/bootstrap.php, inc/helpers.php (vía bootstrap), js/script.js, css/estilo.css.
+ */
 require_once __DIR__ . '/inc/bootstrap.php';
 
+// Catálogos de preferencias válidas para evitar valores inconsistentes en UI.
 $tema_valido = ['Sistema', 'Claro', 'Oscuro'];
 $densidad_valida = ['Media', 'Comoda', 'Compacta'];
 $idiomas_validos = ['es', 'en'];
 
+// Carga tema desde preferencias del usuario con fallback seguro.
 $tema = preferencias_usuario_get($pdo, 'ui.tema') ?? 'Sistema';
 if (!in_array($tema, $tema_valido, true)) {
 	$tema = 'Sistema';
 }
 
+// Carga densidad visual desde preferencias del usuario con fallback seguro.
 $densidad = preferencias_usuario_get($pdo, 'ui.densidad') ?? 'Media';
 if (!in_array($densidad, $densidad_valida, true)) {
 	$densidad = 'Media';
 }
 
+// Traduce preferencias de tema/densidad a clases CSS aplicadas sobre <body>.
 $body_classes = [];
 if ($tema === 'Oscuro') {
 	$body_classes[] = 'tema-oscuro';
@@ -28,6 +38,7 @@ if ($densidad === 'Comoda') {
 	$body_classes[] = 'densidad-compacta';
 }
 
+// Idioma HTML de la página (sincronizado con idioma de sesión si es válido).
 $body_class_attr = trim(implode(' ', $body_classes));
 $lang_attr = in_array(idioma_actual(), $idiomas_validos, true) ? idioma_actual() : 'es';
 ?>
@@ -159,13 +170,14 @@ $lang_attr = in_array(idioma_actual(), $idiomas_validos, true) ? idioma_actual()
 		</nav>
 		<main class="contenido_derecha">
 		<?php
-			// Seccion actual: si no llega ninguna, se muestra el dashboard.
+			// Router principal de secciones:
+			// - si no llega parámetro, abre dashboard por defecto.
 			$seccion = isset($_GET['seccion']) ? $_GET['seccion'] : 'dashboard';
 
-			// Ruta segura del archivo de contenido.
+			// Construye ruta del archivo de sección.
 			$archivo = "secciones/" . $seccion . ".php";
 
-			// Renderiza la seccion si existe, o la bienvenida por defecto.
+			// Incluye la sección si existe; en caso contrario muestra fallback de bienvenida.
 			if (file_exists($archivo)) {
 				include $archivo;
 			} else {

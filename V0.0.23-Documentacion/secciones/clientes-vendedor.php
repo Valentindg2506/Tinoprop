@@ -1,4 +1,9 @@
 <?php
+/*
+ * Sección: Clientes vendedor
+ * Rol: alta, listado y eliminación de clientes de tipo vendedor.
+ * Operaciones principales: crear_cliente, eliminar_cliente, render de tabla.
+ */
 /* Seccion: Clientes (Vendedor)
    Descripcion: Tabla con datos reales desde MySQL
 */
@@ -9,8 +14,10 @@ $origen = 'clientes-vendedor';
 $mensaje_error = flash_get('error');
 $mensaje_exito = flash_get('success');
 
+// Controlador POST del módulo: alta y baja de clientes vendedor.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['crear_cliente'])) {
+        // Recoge datos del formulario y valida campos obligatorios/formato.
         $errores = [];
         $nombre = trim($_POST['nombre'] ?? '');
         $apellido = trim($_POST['apellido'] ?? '');
@@ -41,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Inserta cliente del tipo vendedor.
         $stmt = $pdo->prepare(
             'INSERT INTO clientes (tipo, nombre, apellido, telefono, email, operacion)
              VALUES (:tipo, :nombre, :apellido, :telefono, :email, :operacion)'
@@ -57,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['eliminar_cliente'])) {
+        // Elimina notas asociadas y luego el cliente.
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
             $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'cliente' AND entity_id = :id");
@@ -72,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// Listado principal de clientes vendedor para renderizado de tabla.
 $stmt = $pdo->prepare('SELECT id, nombre, apellido, telefono, email FROM clientes WHERE tipo = :tipo ORDER BY id DESC');
 $stmt->execute(['tipo' => 'vendedor']);
 $clientes_db = $stmt->fetchAll();

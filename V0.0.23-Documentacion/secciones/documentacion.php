@@ -1,4 +1,9 @@
 <?php
+/*
+ * Sección: Documentación
+ * Rol: gestionar archivos y generar PDFs por plantillas para clientes/propiedades.
+ * Incluye filtros de listados, paginación y formularios dinámicos con firma.
+ */
 require_once __DIR__ . '/../inc/bootstrap.php';
 
 $clientes_stmt = $pdo->query("SELECT id, CONCAT(nombre, ' ', apellido) AS etiqueta FROM clientes ORDER BY nombre, apellido");
@@ -18,6 +23,7 @@ foreach ($clientes_data_raw as $cliente_row) {
 $propiedades_data_stmt = $pdo->query("SELECT id, titulo, tipo, ubicacion, direccion, precio, operacion, estado, referencia FROM propiedades ORDER BY id");
 $propiedades_data = $propiedades_data_stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+/* Recorre storage/documentacion y devuelve los últimos archivos por tipo (subidos/generados). */
 function doc_collect_recent_files(string $kind, int $limit = 10): array
 {
     $base = __DIR__ . '/../storage/documentacion';
@@ -80,6 +86,7 @@ function doc_collect_recent_files(string $kind, int $limit = 10): array
     return array_slice($files, 0, $limit);
 }
 
+/* Valida una fecha estricta en formato YYYY-MM-DD. */
 function doc_is_valid_date(?string $value): bool
 {
     if (!$value) {
@@ -90,6 +97,7 @@ function doc_is_valid_date(?string $value): bool
     return $d instanceof DateTime && $d->format('Y-m-d') === $value;
 }
 
+/* Aplica filtros por entidad y rango de fecha sobre una lista de archivos recientes. */
 function doc_filter_recent_files(array $files, string $entity_filter, ?string $from_date, ?string $to_date): array
 {
     $from_ts = $from_date ? strtotime($from_date . ' 00:00:00') : null;
@@ -112,6 +120,7 @@ function doc_filter_recent_files(array $files, string $entity_filter, ?string $f
     }));
 }
 
+/* Pagina una lista de archivos y devuelve metadatos de paginación para la UI. */
 function doc_paginate(array $files, int $page, int $per_page): array
 {
     $total_items = count($files);
@@ -127,6 +136,7 @@ function doc_paginate(array $files, int $page, int $per_page): array
     ];
 }
 
+/* Construye URLs conservando parámetros actuales y aplicando overrides. */
 function doc_build_url(array $overrides = []): string
 {
     $params = $_GET;
@@ -651,6 +661,14 @@ $plantillas = [
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
+// Índice JS del módulo:
+// abrirPanelSubidas/abrirPanelPlantillas/volverInicioDocumentacion -> navegación de paneles.
+// syncUploadEntityUI/entidadSeleccionadaUpload/cargarListados -> gestión de listado de archivos.
+// syncTemplateEntityUI/plantillaActiva/renderCamposPlantilla -> flujo de plantillas PDF.
+// coordFirma/firmaStart/firmaMove/firmaEnd/tieneFirma -> captura y validación de firma.
+// clienteActualData/propiedadActualData/sugerenciaPorCampo/autocompletarCamposPlantilla -> autocompletado.
+// construirDocumentoPdf/cerrarPreview -> preview y cierre de modal PDF.
+
 const plantillas = <?php echo json_encode($plantillas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 const clientesData = <?php echo json_encode($clientes_data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 const propiedadesData = <?php echo json_encode($propiedades_data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
@@ -659,6 +677,7 @@ const docIntro = document.getElementById('doc_intro');
 const panelSubidas = document.getElementById('panel-subidas');
 const panelPlantillas = document.getElementById('panel-plantillas');
 
+// Muestra el panel de subida de archivos y recarga los listados del contexto actual.
 function abrirPanelSubidas() {
     docIntro.classList.add('oculto');
     panelPlantillas.classList.add('oculto');
@@ -666,12 +685,14 @@ function abrirPanelSubidas() {
     cargarListados();
 }
 
+// Muestra el panel de generación de documentos por plantilla.
 function abrirPanelPlantillas() {
     docIntro.classList.add('oculto');
     panelSubidas.classList.add('oculto');
     panelPlantillas.classList.remove('oculto');
 }
 
+// Vuelve al bloque inicial con las dos acciones principales del módulo.
 function volverInicioDocumentacion() {
     panelSubidas.classList.add('oculto');
     panelPlantillas.classList.add('oculto');
@@ -687,6 +708,7 @@ const uploadEntityType = document.getElementById('upload_entity_type');
 const wrapUploadCliente = document.getElementById('wrap_upload_cliente');
 const wrapUploadPropiedad = document.getElementById('wrap_upload_propiedad');
 
+// Alterna selectores de cliente/propiedad según entidad elegida para subida.
 function syncUploadEntityUI() {
     const isCliente = uploadEntityType.value === 'cliente';
     wrapUploadCliente.classList.toggle('oculto', !isCliente);
@@ -699,6 +721,7 @@ uploadEntityType.addEventListener('change', () => {
 });
 syncUploadEntityUI();
 
+// Devuelve entidad e id actualmente seleccionados en el formulario de subida.
 function entidadSeleccionadaUpload() {
     const entityType = uploadEntityType.value;
     const entityId = entityType === 'cliente'
@@ -711,6 +734,7 @@ document.getElementById('upload_cliente_id').addEventListener('change', cargarLi
 document.getElementById('upload_propiedad_id').addEventListener('change', cargarListados);
 document.getElementById('btn_refrescar_listado').addEventListener('click', cargarListados);
 
+// Consulta la API de documentación y renderiza listas de subidos y generados.
 async function cargarListados() {
     const { entityType, entityId } = entidadSeleccionadaUpload();
     const url = `api/documentacion.php?action=list_files&entity_type=${encodeURIComponent(entityType)}&entity_id=${encodeURIComponent(entityId)}`;
@@ -789,6 +813,7 @@ let pendingTpl = null;
 let pendingEntity = null;
 let pendingValues = null;
 
+// Alterna selectores de entidad para la sección de plantillas.
 function syncTemplateEntityUI() {
     const isCliente = tplEntityType.value === 'cliente';
     wrapTplCliente.classList.toggle('oculto', !isCliente);
@@ -805,10 +830,12 @@ plantillas.forEach((tpl) => {
     templateSelect.appendChild(option);
 });
 
+// Devuelve la plantilla actualmente seleccionada en el selector.
 function plantillaActiva() {
     return plantillas.find((tpl) => tpl.key === templateSelect.value) || plantillas[0];
 }
 
+// Dibuja dinámicamente inputs de la plantilla activa y prepara firma/autocompletado.
 function renderCamposPlantilla() {
     const tpl = plantillaActiva();
     templateFields.innerHTML = '';
@@ -835,6 +862,7 @@ const firmaCanvas = document.getElementById('firma_canvas');
 const firmaCtx = firmaCanvas.getContext('2d');
 let firmando = false;
 
+// Convierte coordenadas de mouse/touch al sistema de coordenadas del canvas de firma.
 function coordFirma(event) {
     const rect = firmaCanvas.getBoundingClientRect();
     const touch = event.touches ? event.touches[0] : event;
@@ -844,6 +872,7 @@ function coordFirma(event) {
     };
 }
 
+// Inicia trazo de firma (mousedown/touchstart).
 function firmaStart(event) {
     firmando = true;
     const p = coordFirma(event);
@@ -851,6 +880,7 @@ function firmaStart(event) {
     firmaCtx.moveTo(p.x, p.y);
 }
 
+// Continúa el trazo de firma mientras el usuario arrastra.
 function firmaMove(event) {
     if (!firmando) return;
     event.preventDefault();
@@ -862,6 +892,7 @@ function firmaMove(event) {
     firmaCtx.stroke();
 }
 
+// Finaliza la firma (mouseup/touchend).
 function firmaEnd() {
     firmando = false;
 }
@@ -877,6 +908,7 @@ document.getElementById('firma_limpiar').addEventListener('click', () => {
     firmaCtx.clearRect(0, 0, firmaCanvas.width, firmaCanvas.height);
 });
 
+// Devuelve entidad e id seleccionados para la generación de plantilla.
 function entidadSeleccionadaPlantilla() {
     const entityType = tplEntityType.value;
     const entityId = entityType === 'cliente'
@@ -885,16 +917,19 @@ function entidadSeleccionadaPlantilla() {
     return { entityType, entityId };
 }
 
+// Obtiene el objeto de datos del cliente seleccionado para autocompletar campos.
 function clienteActualData() {
     const id = Number(document.getElementById('tpl_cliente_id').value || 0);
     return clientesData.find((item) => Number(item.id) === id) || null;
 }
 
+// Obtiene el objeto de datos de la propiedad seleccionada para autocompletar campos.
 function propiedadActualData() {
     const id = Number(document.getElementById('tpl_propiedad_id').value || 0);
     return propiedadesData.find((item) => Number(item.id) === id) || null;
 }
 
+// Genera sugerencias por nombre de campo usando datos de cliente/propiedad/contexto.
 function sugerenciaPorCampo(nombreCampo, cliente, propiedad) {
     const campo = nombreCampo.toLowerCase();
 
@@ -942,6 +977,7 @@ function sugerenciaPorCampo(nombreCampo, cliente, propiedad) {
     return '';
 }
 
+// Rellena automáticamente los campos vacíos con sugerencias contextuales.
 function autocompletarCamposPlantilla() {
     const { entityType } = entidadSeleccionadaPlantilla();
     const cliente = entityType === 'cliente' ? clienteActualData() : null;
@@ -965,6 +1001,7 @@ document.getElementById('tpl_cliente_id').addEventListener('change', autocomplet
 document.getElementById('tpl_propiedad_id').addEventListener('change', autocompletarCamposPlantilla);
 tplEntityType.addEventListener('change', autocompletarCamposPlantilla);
 
+// Comprueba si el canvas contiene trazo (firma) revisando canal alpha.
 function tieneFirma() {
     const pixels = firmaCtx.getImageData(0, 0, firmaCanvas.width, firmaCanvas.height).data;
     for (let i = 3; i < pixels.length; i += 4) {
@@ -973,6 +1010,7 @@ function tieneFirma() {
     return false;
 }
 
+// Construye el PDF en memoria validando campos requeridos y firma cuando aplica.
 function construirDocumentoPdf() {
     const tpl = plantillaActiva();
     const form = document.getElementById('formPlantilla');
@@ -1060,6 +1098,7 @@ btnPreviewPdf.addEventListener('click', () => {
     feedback.textContent = 'Vista previa generada.';
 });
 
+// Cierra el modal de vista previa y limpia el iframe.
 function cerrarPreview() {
     docPreviewModal.classList.remove('modal_visible');
     docPreviewModal.setAttribute('aria-hidden', 'true');

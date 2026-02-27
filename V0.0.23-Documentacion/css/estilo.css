@@ -1,3 +1,16 @@
+/*
+ * Archivo: css/estilo.css
+ * Rol: hoja de estilos principal de TinoProp.
+ * Cubre: layout general, login, dashboard, tablas, kanban, modales,
+ *        documentación, configuración, temas y densidad visual.
+ *
+ * Guía rápida de organización:
+ * - Bloques por módulo (documentación, dashboard, kanban, detalle, etc.).
+ * - Variantes visuales por tema en clases `tema-*`.
+ * - Variantes de compactación en clases `densidad-*`.
+ * - Utilidades de estado en clases `oculto`, `activo`, `editando`, etc.
+ */
+
 /* =========================================
    			ESTILO.CSS - TinoProp 
    ========================================= */

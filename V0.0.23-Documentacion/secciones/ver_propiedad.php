@@ -1,4 +1,9 @@
 <?php
+/*
+ * Sección: Ver propiedad
+ * Rol: ficha detallada de propiedad con edición, notas y galería de imágenes.
+ * Acciones: guardar_cambios, guardar_nota, eliminar_propiedad y subida de imágenes por API.
+ */
 /* Seccion: Detalle de Propiedad
    Descripcion: Ficha editable con notas del inmueble
 */
@@ -354,6 +359,11 @@ $imagen_principal = imagen_obtener_principal($pdo, $id_propiedad);
 </form>
 
 <script>
+// Índice JS del módulo:
+// activarEdicion(idCampo) -> habilita edición inline de inputs.
+// subirImagenes(archivos) -> valida, construye FormData y sube imágenes por API.
+
+// Activa edición de un campo removiendo readonly y enfocando el input.
 function activarEdicion(idCampo) {
     let input = document.getElementById(idCampo);
 
@@ -365,7 +375,7 @@ function activarEdicion(idCampo) {
 // GALERÍA DE IMÁGENES
 const areaDrop = document.getElementById('areaDrop');
 if (areaDrop) {
-    // Eventos drag-drop
+    // Eventos drag-drop sobre el área de carga.
     areaDrop.addEventListener('dragover', (e) => {
         e.preventDefault();
         areaDrop.style.backgroundColor = '#f0f0f0';
@@ -382,7 +392,7 @@ if (areaDrop) {
         subirImagenes(archivos);
     });
 
-    // Evento del input file
+    // Evento del input file para subida manual.
     const inputImagenes = document.getElementById('inputImagenes');
     if (inputImagenes) {
         inputImagenes.addEventListener('change', (e) => {
@@ -404,7 +414,7 @@ miniaturas.forEach((img, index) => {
     });
 });
 
-// Función para subir imágenes
+// Sube imágenes seleccionadas/arrastradas y recarga vista al finalizar.
 function subirImagenes(archivos) {
     const propiedadId = <?php echo (int) $_GET['propiedad'] ?? 0; ?>;
     

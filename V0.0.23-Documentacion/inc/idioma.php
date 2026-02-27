@@ -1,5 +1,12 @@
 <?php
+/*
+ * Archivo: inc/idioma.php
+ * Rol: internacionalización ES/EN mediante traducción del buffer HTML al final de la petición.
+ * Componentes: selección de idioma en sesión, validación de idioma, diccionario y traductor.
+ * Flujo: bootstrap inicia buffer -> i18n_traducir_buffer aplica diccionario -> respuesta final traducida.
+ */
 
+/* Devuelve el idioma actual almacenado en sesión (por defecto: es). */
 function idioma_actual(): string
 {
     return $_SESSION['idioma'] ?? 'es';
@@ -7,9 +14,11 @@ function idioma_actual(): string
 
 function idioma_es_valido(string $lang): bool
 {
+    // Idiomas soportados actualmente por la interfaz.
     return in_array($lang, ['es', 'en'], true);
 }
 
+/* Guarda el idioma elegido en sesión solo si está permitido. */
 function idioma_establecer(string $lang): void
 {
     if (!idioma_es_valido($lang)) {
@@ -20,6 +29,7 @@ function idioma_establecer(string $lang): void
 
 function i18n_traducciones(): array
 {
+    // Cache estática para no reconstruir el diccionario en cada llamada.
     static $map = null;
 
     if ($map !== null) {
@@ -309,8 +319,10 @@ function i18n_traducciones(): array
     return $map;
 }
 
+/* Traduce el HTML final cuando el idioma activo es inglés. */
 function i18n_traducir_buffer(string $html): string
 {
+    // Solo se traduce cuando el idioma activo es inglés.
     if (idioma_actual() !== 'en') {
         return $html;
     }
@@ -328,10 +340,11 @@ function i18n_traducir_buffer(string $html): string
         }
     }
 
-    // Reemplazos directos para frases largas
+    // Reemplazo directo para frases largas (más rápido y suficiente).
     $html = str_replace(array_keys($largos), array_values($largos), $html);
 
-    // Reemplazos seguros con palabra completa para tokens cortos (evita "Vi" -> "Fri" dentro de "View")
+    // Reemplazos con frontera de palabra para tokens cortos.
+    // Evita colisiones como "Vi" dentro de "View".
     foreach ($cortos as $es => $en) {
         $pattern = '/\b' . preg_quote($es, '/') . '\b/u';
         $html = preg_replace($pattern, $en, $html);
@@ -340,11 +353,14 @@ function i18n_traducir_buffer(string $html): string
     return $html;
 }
 
+/* Inicia el output buffering para poder traducir la salida final. */
 function i18n_iniciar_buffer(): void
 {
+    // Captura salida para poder traducir el HTML final completo.
     ob_start();
 }
 
+/* Cierra el buffer, traduce el HTML y lo imprime en la respuesta. */
 function i18n_finalizar_buffer(): void
 {
     if (ob_get_level() === 0) {
