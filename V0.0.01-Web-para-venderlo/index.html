@@ -3,234 +3,917 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tinoprop - El CRM Inmobiliario Todo en Uno</title>
+    <title>TinoProp | CRM Inmobiliario para captar, vender y escalar</title>
     <style>
         :root {
-            --primary: #2563eb; /* Azul */
-            --secondary: #f97316; /* Naranja */
-            --dark: #1e293b;
-            --light: #f8fafc;
+            --blue-900: #1f2d3d;
+            --blue-800: #2c3e50;
+            --blue-700: #1f6fb2;
+            --blue-600: #3498db;
+            --blue-100: #eaf2fb;
+            --bg: #f6faff;
+            --surface: #ffffff;
+            --text: #223548;
+            --muted: #5f6f7f;
+            --line: #dfe7ef;
+            --accent: #4ecdc4;
+            --shadow: 0 12px 30px rgba(31, 45, 61, 0.14);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+            scroll-behavior: smooth;
         }
 
         body {
-            line-height: 1.6;
-            color: var(--dark);
+            line-height: 1.55;
+            color: var(--text);
+            background: var(--bg);
+            background-image:
+                radial-gradient(circle at 8% -10%, rgba(52, 152, 219, 0.14), transparent 30%),
+                radial-gradient(circle at 100% 0%, rgba(78, 205, 196, 0.1), transparent 26%);
         }
 
-        /* Header */
+        .contenedor {
+            width: min(1120px, 92%);
+            margin: 0 auto;
+        }
+
         header {
-            background: white;
-            padding: 1rem 5%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            padding: 0.9rem 0;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            justify-content: center;
+            box-shadow: 0 2px 14px rgba(31, 45, 61, 0.08);
             position: fixed;
             width: 100%;
             top: 0;
             z-index: 1000;
+            border-bottom: 1px solid rgba(223, 231, 239, 0.7);
+        }
+
+        .header_inner {
+            width: min(1120px, 92%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .logo {
             font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary);
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            color: var(--blue-800);
         }
 
         .logo span {
-            color: var(--secondary);
+            color: var(--blue-600);
         }
 
         nav a {
             text-decoration: none;
-            color: var(--dark);
-            margin-left: 2rem;
-            font-weight: 500;
-            transition: color 0.3s;
+            color: var(--text);
+            margin-left: 1.4rem;
+            font-weight: 600;
+            font-size: 0.96rem;
+            transition: color 0.25s;
         }
 
         nav a:hover {
-            color: var(--primary);
+            color: var(--blue-700);
         }
 
-        .btn-cta {
-            background: var(--secondary);
-            color: white;
-            padding: 0.5rem 1.5rem;
-            border-radius: 50px;
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
             text-decoration: none;
-            font-weight: bold;
-            transition: transform 0.3s;
+            border-radius: 999px;
+            padding: 0.72rem 1.35rem;
+            font-weight: 700;
+            font-size: 0.93rem;
+            transition: 0.25s transform, 0.25s box-shadow, 0.25s opacity;
+            border: 1px solid transparent;
+            cursor: pointer;
         }
 
-        .btn-cta:hover {
-            transform: scale(1.05);
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(31, 45, 61, 0.16);
         }
 
-        /* Hero Section */
+        .btn-primario {
+            background: linear-gradient(135deg, var(--blue-800), var(--blue-600));
+            color: white;
+            box-shadow: 0 8px 18px rgba(52, 152, 219, 0.35);
+        }
+
+        .btn-secundario {
+            background: var(--surface);
+            color: var(--blue-800);
+            border-color: var(--line);
+        }
+
         .hero {
-            padding: 8rem 5% 4rem;
-            background: linear-gradient(135deg, #eff6ff 0%, #fff 100%);
-            text-align: center;
-            display: flex;
-            flex-direction: column;
+            padding: 8.8rem 0 4rem;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(78, 205, 196, 0.15), transparent 38%),
+                radial-gradient(circle at 95% 20%, rgba(52, 152, 219, 0.20), transparent 35%),
+                linear-gradient(180deg, #f4f9ff 0%, #ffffff 100%);
+            border-bottom: 1px solid #edf3f9;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .premium_badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #0f3e67;
+            background: linear-gradient(135deg, #d7ebff, #e8f7ff);
+            border: 1px solid #b7d6f2;
+            border-radius: 999px;
+            padding: 0.38rem 0.75rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 999px;
+            right: -150px;
+            bottom: -220px;
+            background: radial-gradient(circle, rgba(31, 111, 178, 0.22), rgba(31, 111, 178, 0));
+            pointer-events: none;
+        }
+
+        .hero_grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 2.2rem;
             align-items: center;
         }
 
         .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1.5rem;
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            margin-bottom: 1rem;
             line-height: 1.2;
+            color: var(--blue-900);
         }
 
         .hero h1 span {
-            color: var(--primary);
+            color: var(--blue-600);
         }
 
         .hero p {
-            font-size: 1.25rem;
-            color: #64748b;
-            max-width: 700px;
-            margin-bottom: 2.5rem;
+            font-size: 1.06rem;
+            color: var(--muted);
+            max-width: 630px;
+            margin-bottom: 1.6rem;
         }
 
-        /* Features */
-        .features {
-            padding: 5rem 5%;
-            background: white;
+        .hero_bullets {
+            list-style: none;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
+            gap: 0.5rem;
+            margin-bottom: 1.6rem;
+            color: #385066;
+            font-weight: 600;
         }
 
-        .feature-card {
-            padding: 2rem;
-            border-radius: 15px;
-            background: var(--light);
-            transition: transform 0.3s;
-            border: 1px solid #e2e8f0;
+        .hero_bullets li::before {
+            content: '✓';
+            color: var(--blue-600);
+            margin-right: 0.5rem;
+            font-weight: 800;
         }
 
-        .feature-card:hover {
-            transform: translateY(-10px);
-            border-color: var(--primary);
-        }
-
-        .icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .feature-card h3 {
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-        }
-
-        /* Value Prop */
-        .value-prop {
-            padding: 5rem 5%;
-            background: var(--dark);
-            color: white;
-            text-align: center;
-        }
-
-        .value-prop h2 {
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-        }
-
-        .stats-container {
+        .hero_botones {
             display: flex;
-            justify-content: space-around;
+            gap: 0.7rem;
             flex-wrap: wrap;
         }
 
-        .stat-item h4 {
-            font-size: 3rem;
-            color: var(--secondary);
+        .hero_panel {
+            background: linear-gradient(170deg, rgba(255, 255, 255, 0.96), rgba(244, 250, 255, 0.94));
+            border: 1px solid rgba(182, 209, 233, 0.55);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            padding: 1.1rem;
+            backdrop-filter: blur(6px);
         }
 
-        /* Footer */
+        .panel_head {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            color: var(--muted);
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+
+        .panel_metricas {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .metrica {
+            background: #f7fbff;
+            border: 1px solid #e3eef8;
+            border-radius: 12px;
+            padding: 0.75rem 0.9rem;
+        }
+
+        .metrica strong {
+            display: block;
+            font-size: 1.2rem;
+            color: var(--blue-800);
+        }
+
+        .metrica span {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .barra_confianza {
+            padding: 1rem 0;
+            border-bottom: 1px solid #edf3f9;
+            background: #fff;
+        }
+
+        .confianza_flex {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            color: #45617a;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        .seccion {
+            padding: 4.2rem 0;
+        }
+
+        .seccion h2 {
+            font-size: clamp(1.6rem, 2.8vw, 2.25rem);
+            color: var(--blue-900);
+            margin-bottom: 0.7rem;
+        }
+
+        .seccion_intro {
+            color: var(--muted);
+            margin-bottom: 1.8rem;
+            max-width: 760px;
+        }
+
+        .grid_3 {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 1.2rem;
+            box-shadow: 0 8px 18px rgba(31, 45, 61, 0.06);
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #c7ddf0;
+            box-shadow: 0 14px 26px rgba(31, 45, 61, 0.12);
+        }
+
+        .card h3 {
+            font-size: 1.06rem;
+            margin-bottom: 0.45rem;
+            color: var(--blue-800);
+        }
+
+        .card p {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .icono {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 0.8rem;
+            background: linear-gradient(135deg, #e7f2fc, #f3f9ff);
+            color: var(--blue-700);
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .modulos {
+            background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+            border-top: 1px solid #edf3f9;
+            border-bottom: 1px solid #edf3f9;
+        }
+
+        .modulos_layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.1rem;
+        }
+
+        .lista_checks {
+            list-style: none;
+            display: grid;
+            gap: 0.65rem;
+            margin-top: 0.8rem;
+        }
+
+        .lista_checks li {
+            background: #fff;
+            border: 1px solid #e3ecf5;
+            border-radius: 10px;
+            padding: 0.65rem 0.8rem;
+            font-size: 0.93rem;
+            color: #3f5870;
+        }
+
+        .lista_checks li::before {
+            content: '●';
+            color: var(--blue-600);
+            margin-right: 0.5rem;
+        }
+
+        .valor {
+            background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
+            color: #fff;
+            text-align: center;
+        }
+
+        .valor h2 {
+            color: #fff;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.09);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 1.7rem;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+        }
+
+        .precios {
+            background: #fff;
+        }
+
+        .planes {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .plan {
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 1.2rem;
+            background: #fff;
+            box-shadow: 0 8px 20px rgba(31, 45, 61, 0.07);
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        .plan:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 30px rgba(31, 45, 61, 0.15);
+        }
+
+        .plan h3 {
+            color: var(--blue-800);
+            margin-bottom: 0.3rem;
+        }
+
+        .precio {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--blue-900);
+            margin: 0.5rem 0 0.8rem;
+        }
+
+        .plan ul {
+            list-style: none;
+            display: grid;
+            gap: 0.45rem;
+            margin-bottom: 1rem;
+            color: var(--muted);
+            font-size: 0.93rem;
+        }
+
+        .plan_destacado {
+            border: 2px solid var(--blue-600);
+            position: relative;
+        }
+
+        .badge {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: var(--blue-600);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.24rem 0.55rem;
+            border-radius: 999px;
+        }
+
+        .faq {
+            background: #f8fbff;
+            border-top: 1px solid #edf3f9;
+            border-bottom: 1px solid #edf3f9;
+        }
+
+        details {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            background: #fff;
+            margin-bottom: 0.7rem;
+            box-shadow: 0 6px 14px rgba(31, 45, 61, 0.05);
+        }
+
+        summary {
+            font-weight: 700;
+            color: var(--blue-800);
+            cursor: pointer;
+        }
+
+        details p {
+            margin-top: 0.65rem;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .cta_final {
+            text-align: center;
+            background: linear-gradient(180deg, #ffffff 0%, #f3f9ff 100%);
+        }
+
+        .cta_box {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contacto_grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.2rem;
+            text-align: left;
+            position: relative;
+            z-index: 1;
+        }
+
+        .contacto_info {
+            border: 1px solid #d8e8f6;
+            border-radius: 12px;
+            background: #f6fbff;
+            padding: 1rem;
+            color: #3f5870;
+            font-size: 0.94rem;
+        }
+
+        .contacto_info h3 {
+            color: var(--blue-800);
+            margin-bottom: 0.45rem;
+            font-size: 1.04rem;
+        }
+
+        .contacto_form {
+            border: 1px solid #d8e8f6;
+            border-radius: 12px;
+            background: #ffffff;
+            padding: 1rem;
+        }
+
+        .campo {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .campo label {
+            color: #385066;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .campo input,
+        .campo textarea {
+            border: 1px solid #cfe1f0;
+            background: #f8fcff;
+            border-radius: 10px;
+            padding: 0.62rem 0.72rem;
+            font-size: 0.92rem;
+            color: var(--text);
+            outline: none;
+        }
+
+        .campo input:focus,
+        .campo textarea:focus {
+            border-color: #7db6e2;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.12);
+            background: #fff;
+        }
+
+        .contacto_form .btn {
+            width: 100%;
+        }
+
+        .cta_box::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(52, 152, 219, 0.08), rgba(78, 205, 196, 0.04));
+            pointer-events: none;
+        }
+
+        .cta_box p {
+            color: var(--muted);
+            max-width: 680px;
+            margin: 0.8rem auto 1.3rem;
+        }
+
         footer {
             text-align: center;
-            padding: 2rem;
-            background: #0f172a;
+            padding: 1.6rem;
+            background: #0f1724;
             color: #94a3b8;
             font-size: 0.9rem;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
-            .hero h1 { font-size: 2.5rem; }
-            nav { display: none; } /* Simplificado para el ejemplo */
+            nav { display: none; }
+            .hero { padding-top: 7.2rem; }
+            .hero_grid,
+            .modulos_layout,
+            .grid_3,
+            .stats,
+            .planes {
+                grid-template-columns: 1fr;
+            }
+            .hero_botones {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+            }
+            .cta_box {
+                padding: 1.4rem;
+            }
+            .contacto_grid {
+                grid-template-columns: 1fr;
+            }
+            .hero::after {
+                width: 280px;
+                height: 280px;
+                right: -100px;
+                bottom: -160px;
+            }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">Tino<span>Prop</span></div>
-        <nav>
-            <a href="#funcionalidades">Funcionalidades</a>
-            <a href="#precios">Precios</a>
-            <a href="#" class="btn-cta">Probar Demo</a>
-        </nav>
+        <div class="header_inner">
+            <div class="logo">Tino<span>Prop</span></div>
+            <nav>
+                <a href="#funcionalidades">Funcionalidades</a>
+                <a href="#modulos">Módulos</a>
+                <a href="#precios">Precios</a>
+                <a href="#faq">FAQ</a>
+                <a href="mailto:demo@tinoprop.com?subject=Solicitud%20de%20demo%20TinoProp&body=Hola%20equipo%20de%20TinoProp%2C%20quiero%20una%20demo." class="btn btn-primario">Solicitar demo</a>
+            </nav>
+        </div>
     </header>
 
     <section class="hero">
-        <h1>Gestiona tu inmobiliaria<br><span>Sin salir de la App</span></h1>
-        <p>Olvídate de Word, Excel y navegar por mil portales. Tinoprop unifica CRM, búsqueda de mercado y generación de contratos en una sola herramienta.</p>
-        <a href="#" class="btn-cta">Empezar ahora gratis</a>
+        <div class="contenedor hero_grid">
+            <div>
+                <span class="premium_badge">◆ Edición Ultra Premium</span>
+                <h1>El CRM inmobiliario para <span>captar más y vender mejor</span></h1>
+                <p>TinoProp centraliza tus clientes, propiedades, recordatorios, búsqueda de mercado y documentos en una sola plataforma. Menos tareas manuales, más cierres.</p>
+
+                <ul class="hero_bullets">
+                    <li>Pipeline visual para comprador y vendedor</li>
+                    <li>Control completo de agenda y seguimientos</li>
+                    <li>Procesos claros para equipos pequeños y medianos</li>
+                </ul>
+
+                <div class="hero_botones">
+                    <a href="mailto:demo@tinoprop.com?subject=Solicitud%20de%20demo%20TinoProp&body=Hola%20equipo%20de%20TinoProp%2C%20quiero%20una%20demo." class="btn btn-primario">Quiero una demo</a>
+                    <a href="#precios" class="btn btn-secundario">Ver planes</a>
+                </div>
+            </div>
+
+            <aside class="hero_panel">
+                <div class="panel_head">
+                    <span>Resumen del día</span>
+                    <span>Equipo Comercial</span>
+                </div>
+                <div class="panel_metricas">
+                    <div class="metrica">
+                        <strong>14 oportunidades</strong>
+                        <span>prospectos activos en seguimiento</span>
+                    </div>
+                    <div class="metrica">
+                        <strong>6 visitas programadas</strong>
+                        <span>sincronizadas en recordatorios</span>
+                    </div>
+                    <div class="metrica">
+                        <strong>3 cierres potenciales</strong>
+                        <span>en fase final esta semana</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
     </section>
 
-    <section class="features" id="funcionalidades">
-        <div class="feature-card">
-            <div class="icon">📊</div>
-            <h3>CRM Visual Kanban</h3>
-            <p>Mueve a tus clientes desde "Nuevo" hasta "Compró" arrastrando tarjetas. Visualiza tu embudo de ventas al instante y no pierdas ninguna oportunidad.</p>
+    <div class="barra_confianza">
+        <div class="contenedor confianza_flex">
+            <span>✔ CRM inmobiliario especializado</span>
+            <span>✔ Enfoque en productividad real</span>
+            <span>✔ Flujo comercial de punta a punta</span>
+            <span>✔ Base sólida para escalar tu equipo</span>
         </div>
+    </div>
 
-        <div class="feature-card">
-            <div class="icon">🔎</div>
-            <h3>Buscador Inteligente</h3>
-            <p>¿Buscas captar? Nuestro scraper rastrea los principales portales de España y te muestra las oportunidades de negocio sin que tengas que abrir otras webs.</p>
-        </div>
+    <section class="seccion" id="funcionalidades">
+        <div class="contenedor">
+            <h2>Funcionalidades clave para tu inmobiliaria</h2>
+            <p class="seccion_intro">No es un CRM genérico: está pensado para el trabajo diario de captación, gestión de cartera y seguimiento comercial inmobiliario.</p>
 
-        <div class="feature-card">
-            <div class="icon">📄</div>
-            <h3>Adiós al Word</h3>
-            <p>Genera contratos de arras, reserva y notas de encargo en PDF con un solo clic. Datos rellenados automáticamente y sin errores humanos.</p>
+            <div class="grid_3">
+                <article class="card">
+                    <div class="icono">01</div>
+                    <h3>Pipeline visual por etapas</h3>
+                    <p>Gestiona prospectos comprador y vendedor con tablero tipo kanban y prioriza acciones sin perder contexto.</p>
+                </article>
+
+                <article class="card">
+                    <div class="icono">02</div>
+                    <h3>Clientes y propiedades unificados</h3>
+                    <p>Relaciona cada cliente con inmuebles, notas internas, estado comercial y próximos pasos en una sola vista.</p>
+                </article>
+
+                <article class="card">
+                    <div class="icono">03</div>
+                    <h3>Recordatorios operativos</h3>
+                    <p>Programa tareas, llamadas y visitas para que tu equipo ejecute a tiempo y no se enfríe ninguna oportunidad.</p>
+                </article>
+
+                <article class="card">
+                    <div class="icono">04</div>
+                    <h3>Búsqueda avanzada de mercado</h3>
+                    <p>Detecta oportunidades, compara zonas y cruza información de forma rápida para mejorar captación y cierre.</p>
+                </article>
+
+                <article class="card">
+                    <div class="icono">05</div>
+                    <h3>Configuración por usuario</h3>
+                    <p>Preferencias de interfaz, idioma y parámetros de trabajo para una experiencia más cómoda y productiva.</p>
+                </article>
+
+                <article class="card">
+                    <div class="icono">06</div>
+                    <h3>Base preparada para documentos</h3>
+                    <p>Estructura lista para automatizar generación documental y reducir tiempos administrativos repetitivos.</p>
+                </article>
+            </div>
         </div>
     </section>
 
-    <section class="value-prop">
-        <h2>¿Por qué elegir Tinoprop?</h2>
-        <div class="stats-container">
-            <div class="stat-item">
-                <h4>-40%</h4>
-                <p>Tiempo administrativo</p>
+    <section class="seccion modulos" id="modulos">
+        <div class="contenedor modulos_layout">
+            <article class="card">
+                <h3>Módulo comercial</h3>
+                <p>Diseñado para mantener visibilidad total de tu embudo de negocio y acelerar el avance de cada contacto.</p>
+                <ul class="lista_checks">
+                    <li>Altas rápidas de clientes y propiedades</li>
+                    <li>Seguimiento por fase y operación</li>
+                    <li>Notas internas por registro</li>
+                    <li>Historial claro para cada oportunidad</li>
+                </ul>
+            </article>
+
+            <article class="card">
+                <h3>Módulo operativo</h3>
+                <p>Controla tareas y organización diaria para que el equipo comercial mantenga ritmo constante.</p>
+                <ul class="lista_checks">
+                    <li>Recordatorios y agenda de acciones</li>
+                    <li>Filtros y búsquedas por criterios reales</li>
+                    <li>Panel de estado de pipeline</li>
+                    <li>Preparado para escalado funcional</li>
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <section class="seccion valor">
+        <div class="contenedor">
+            <h2>Resultados que puedes esperar</h2>
+            <div class="stats">
+                <div class="stat">
+                    <strong>-35%</strong>
+                    <p>en tiempo administrativo operativo</p>
+                </div>
+                <div class="stat">
+                    <strong>+27%</strong>
+                    <p>en seguimiento efectivo de oportunidades</p>
+                </div>
+                <div class="stat">
+                    <strong>100%</strong>
+                    <p>de visibilidad del estado comercial</p>
+                </div>
             </div>
-            <div class="stat-item">
-                <h4>100%</h4>
-                <p>Control legal</p>
+        </div>
+    </section>
+
+    <section class="seccion precios" id="precios">
+        <div class="contenedor">
+            <h2>Planes pensados para crecer contigo</h2>
+            <p class="seccion_intro">Landing de validación comercial. Puedes ajustar precios o condiciones según la fase de lanzamiento.</p>
+
+            <div class="planes">
+                <article class="plan">
+                    <h3>Starter</h3>
+                    <p>Para agentes individuales</p>
+                    <div class="precio">49€<small>/mes</small></div>
+                    <ul>
+                        <li>Hasta 1 usuario</li>
+                        <li>CRM + propiedades + recordatorios</li>
+                        <li>Soporte por email</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-secundario">Solicitar acceso</a>
+                </article>
+
+                <article class="plan plan_destacado">
+                    <span class="badge">Más elegido</span>
+                    <h3>Pro</h3>
+                    <p>Para equipos comerciales</p>
+                    <div class="precio">129€<small>/mes</small></div>
+                    <ul>
+                        <li>Hasta 5 usuarios</li>
+                        <li>Pipeline completo comprador/vendedor</li>
+                        <li>Búsqueda avanzada y panel operativo</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-primario">Quiero demo Pro</a>
+                </article>
+
+                <article class="plan">
+                    <h3>Agencia</h3>
+                    <p>Para operación multi-equipo</p>
+                    <div class="precio">Personalizado</div>
+                    <ul>
+                        <li>Usuarios ilimitados</li>
+                        <li>Onboarding asistido</li>
+                        <li>Soporte prioritario</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-secundario">Hablar con ventas</a>
+                </article>
             </div>
-            <div class="stat-item">
-                <h4>24/7</h4>
-                <p>Monitorización de mercado</p>
+        </div>
+    </section>
+
+    <section class="seccion faq" id="faq">
+        <div class="contenedor">
+            <h2>Preguntas frecuentes</h2>
+            <p class="seccion_intro">Respuestas rápidas para conversaciones con potenciales clientes.</p>
+
+            <details>
+                <summary>¿Tinoprop es solo para compraventa?</summary>
+                <p>No. Tinoprop está preparado para trabajar tanto compraventa como alquiler desde flujos diferenciados, con visibilidad específica por operación y por tipo de cliente. Esto evita mezclar procesos comerciales que normalmente tienen tiempos y documentación distintos. Además, puedes mantener un seguimiento independiente para comprador y vendedor sin perder trazabilidad histórica, algo clave cuando gestionas muchas oportunidades en paralelo.</p>
+            </details>
+
+            <details>
+                <summary>¿Se puede usar con equipos pequeños?</summary>
+                <p>Sí. De hecho, está pensado para ser útil desde el primer día en agencias pequeñas o equipos de 1 a 5 personas, donde cada minuto cuenta y la organización suele depender de procesos manuales. La curva de adopción es corta porque la interfaz prioriza tareas diarias reales: captar, llamar, seguir y cerrar. Cuando tu operación crece, la estructura actual permite ampliar usuarios y mantener orden sin rehacer el sistema de trabajo.</p>
+            </details>
+
+            <details>
+                <summary>¿Qué aporta frente a hojas de cálculo?</summary>
+                <p>Aporta centralización operativa y control comercial continuo. Con hojas de cálculo es habitual perder contexto, duplicar datos y no tener claro en qué etapa está cada oportunidad; con Tinoprop todo queda conectado: clientes, propiedades, notas, tareas y estado del pipeline. Esto reduce errores de coordinación, mejora el seguimiento del equipo y facilita decisiones comerciales con información unificada y actualizada.</p>
+            </details>
+
+            <details>
+                <summary>¿Incluye soporte de puesta en marcha?</summary>
+                <p>Sí. Puedes incluir onboarding guiado para configurar estructura inicial, definir el flujo comercial y dejar al equipo operando con una metodología clara desde la primera semana. También es posible plantear acompañamiento en la fase de adopción para revisar uso real, corregir fricciones y estandarizar buenas prácticas. Así no se queda en “instalar y ya”, sino en implantar un proceso comercial medible.</p>
+            </details>
+        </div>
+    </section>
+
+    <section class="seccion cta_final" id="contacto">
+        <div class="contenedor">
+            <div class="cta_box">
+                <h2>¿Quieres lanzar Tinoprop en tu agencia?</h2>
+                <p>Si estás validando producto o cerrando primeros clientes, esta landing ya está preparada para presentar propuesta de valor, módulos, precios y cierre comercial.</p>
+                <div class="hero_botones" style="justify-content:center;">
+                    <a href="mailto:demo@tinoprop.com?subject=Solicitud%20de%20demo%20TinoProp&body=Hola%20equipo%20de%20TinoProp%2C%20quiero%20agendar%20una%20demo." class="btn btn-primario">Agendar demo</a>
+                    <a href="#precios" class="btn btn-secundario">Revisar planes</a>
+                </div>
+
+                <div class="contacto_grid">
+                    <article class="contacto_info">
+                        <h3>Solicitud directa de demo</h3>
+                        <p>Completa este formulario y al pulsar “Enviar solicitud” se abrirá tu correo con todos los datos ya cargados para que puedas enviarlo en un clic.</p>
+                        <p style="margin-top:0.7rem;"><strong>Email de contacto:</strong> demo@tinoprop.com</p>
+                        <p><strong>Tiempo estimado de respuesta:</strong> 24-48h laborables</p>
+                    </article>
+
+                    <form class="contacto_form" id="formDemo">
+                        <div class="campo">
+                            <label for="nombre_demo">Nombre</label>
+                            <input id="nombre_demo" name="nombre_demo" type="text" placeholder="Tu nombre" required>
+                        </div>
+                        <div class="campo">
+                            <label for="email_demo">Email</label>
+                            <input id="email_demo" name="email_demo" type="email" placeholder="tuemail@agencia.com" required>
+                        </div>
+                        <div class="campo">
+                            <label for="telefono_demo">Teléfono</label>
+                            <input id="telefono_demo" name="telefono_demo" type="text" placeholder="+34 ...">
+                        </div>
+                        <div class="campo">
+                            <label for="mensaje_demo">Mensaje</label>
+                            <textarea id="mensaje_demo" name="mensaje_demo" rows="4" placeholder="Cuéntanos qué necesitas exactamente" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primario">Enviar solicitud</button>
+                    </form>
+                </div>
             </div>
         </div>
     </section>
 
     <footer>
-        <p>© 2026 Tinoprop Solutions - Valencia, España. Proyecto desarrollado por Valentín Antonio De Gennaro.</p>
+        <p>© 2026 TinoProp Solutions · Valencia, España · CRM inmobiliario para equipos comerciales</p>
     </footer>
+
+    <script>
+        const formDemo = document.getElementById('formDemo');
+
+        formDemo?.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const nombre = document.getElementById('nombre_demo')?.value.trim() || '';
+            const email = document.getElementById('email_demo')?.value.trim() || '';
+            const telefono = document.getElementById('telefono_demo')?.value.trim() || 'No indicado';
+            const mensaje = document.getElementById('mensaje_demo')?.value.trim() || '';
+
+            const subject = encodeURIComponent('Solicitud de demo TinoProp - ' + nombre);
+            const body = encodeURIComponent(
+                'Hola equipo de TinoProp,%0D%0A%0D%0A' +
+                'Quiero solicitar una demo.%0D%0A%0D%0A' +
+                'Nombre: ' + nombre + '%0D%0A' +
+                'Email: ' + email + '%0D%0A' +
+                'Teléfono: ' + telefono + '%0D%0A%0D%0A' +
+                'Mensaje:%0D%0A' + mensaje + '%0D%0A%0D%0A' +
+                'Gracias.'
+            );
+
+            window.location.href = 'mailto:demo@tinoprop.com?subject=' + subject + '&body=' + body;
+        });
+    </script>
 
 </body>
 </html>
