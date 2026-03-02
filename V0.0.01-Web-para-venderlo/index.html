@@ -3,812 +3,771 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TinoProp | CRM Inmobiliario para captar, vender y escalar</title>
+    <title>TinoProp | CRM Inmobiliario · Gestiona tu agencia sin complicaciones</title>
+    <meta name="description" content="TinoProp es el CRM inmobiliario multi-tenant con paneles para comprador y vendedor, Kanban, visitas, ofertas, matching inteligente y más. Solicita tu demo.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --blue-900: #1f2d3d;
-            --blue-800: #2c3e50;
-            --blue-700: #1f6fb2;
-            --blue-600: #3498db;
-            --blue-100: #eaf2fb;
-            --bg: #f6faff;
+            --primary: #1a56db;
+            --primary-dark: #1e3a5f;
+            --primary-light: #e8f0fe;
+            --accent: #10b981;
+            --accent-dark: #059669;
+            --bg: #f8fafc;
             --surface: #ffffff;
-            --text: #223548;
-            --muted: #5f6f7f;
-            --line: #dfe7ef;
-            --accent: #4ecdc4;
-            --shadow: 0 12px 30px rgba(31, 45, 61, 0.14);
+            --text: #1e293b;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow: 0 10px 40px rgba(0,0,0,0.08);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,0.12);
+            --radius: 16px;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Inter, 'Segoe UI', system-ui, sans-serif;
-            scroll-behavior: smooth;
-        }
-
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior:smooth; }
         body {
-            line-height: 1.55;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
             color: var(--text);
             background: var(--bg);
-            background-image:
-                radial-gradient(circle at 8% -10%, rgba(52, 152, 219, 0.14), transparent 30%),
-                radial-gradient(circle at 100% 0%, rgba(78, 205, 196, 0.1), transparent 26%);
+            -webkit-font-smoothing: antialiased;
         }
 
-        .contenedor {
-            width: min(1120px, 92%);
-            margin: 0 auto;
-        }
+        .contenedor { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem; }
 
+        /* ─── HEADER ─── */
         header {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(10px);
-            padding: 0.9rem 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 14px rgba(31, 45, 61, 0.08);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(223, 231, 239, 0.7);
+            position: fixed; top: 0; width: 100%; z-index: 1000;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--line);
+            padding: 0.75rem 0;
         }
-
         .header_inner {
-            width: min(1120px, 92%);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            max-width: 1140px; margin: 0 auto; padding: 0 1.5rem;
+            display: flex; justify-content: space-between; align-items: center;
         }
+        .logo { font-size: 1.5rem; font-weight: 900; color: var(--primary-dark); text-decoration: none; }
+        .logo span { color: var(--primary); }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: 0.3px;
-            color: var(--blue-800);
-        }
-
-        .logo span {
-            color: var(--blue-600);
-        }
-
+        nav { display: flex; align-items: center; gap: 0.2rem; }
         nav a {
-            text-decoration: none;
-            color: var(--text);
-            margin-left: 1.4rem;
-            font-weight: 600;
-            font-size: 0.96rem;
-            transition: color 0.25s;
+            text-decoration: none; color: var(--muted); font-weight: 600; font-size: 0.9rem;
+            padding: 0.5rem 0.85rem; border-radius: 8px; transition: all 0.2s;
         }
+        nav a:hover { color: var(--text); background: var(--primary-light); }
 
-        nav a:hover {
-            color: var(--blue-700);
+        .hamburger {
+            display: none; background: none; border: none; cursor: pointer;
+            width: 32px; height: 32px; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
         }
+        .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: 0.3s; }
 
+        /* ─── BOTONES ─── */
         .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.45rem;
-            text-decoration: none;
-            border-radius: 999px;
-            padding: 0.72rem 1.35rem;
-            font-weight: 700;
-            font-size: 0.93rem;
-            transition: 0.25s transform, 0.25s box-shadow, 0.25s opacity;
-            border: 1px solid transparent;
-            cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+            text-decoration: none; border-radius: 10px; padding: 0.7rem 1.4rem;
+            font-weight: 700; font-size: 0.92rem; border: none; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 12px 24px rgba(31, 45, 61, 0.16);
-        }
-
+        .btn:hover { transform: translateY(-2px); }
         .btn-primario {
-            background: linear-gradient(135deg, var(--blue-800), var(--blue-600));
-            color: white;
-            box-shadow: 0 8px 18px rgba(52, 152, 219, 0.35);
+            background: var(--primary); color: #fff;
+            box-shadow: 0 4px 14px rgba(26,86,219,0.35);
         }
-
+        .btn-primario:hover { box-shadow: 0 8px 24px rgba(26,86,219,0.4); }
         .btn-secundario {
-            background: var(--surface);
-            color: var(--blue-800);
-            border-color: var(--line);
+            background: var(--surface); color: var(--primary-dark);
+            border: 1.5px solid var(--line);
         }
+        .btn-secundario:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-verde {
+            background: var(--accent); color: #fff;
+            box-shadow: 0 4px 14px rgba(16,185,129,0.35);
+        }
+        .btn-verde:hover { box-shadow: 0 8px 24px rgba(16,185,129,0.4); background: var(--accent-dark); }
 
+        /* ─── HERO ─── */
         .hero {
-            padding: 8.8rem 0 4rem;
-            background:
-                radial-gradient(circle at 10% 10%, rgba(78, 205, 196, 0.15), transparent 38%),
-                radial-gradient(circle at 95% 20%, rgba(52, 152, 219, 0.20), transparent 35%),
-                linear-gradient(180deg, #f4f9ff 0%, #ffffff 100%);
-            border-bottom: 1px solid #edf3f9;
-            position: relative;
+            padding: 9rem 0 5rem;
+            background: linear-gradient(170deg, #f0f5ff 0%, #ffffff 50%, #f0fdf4 100%);
+            position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%;
+            top: -200px; right: -200px;
+            background: radial-gradient(circle, rgba(26,86,219,0.08), transparent 70%);
+        }
+        .hero::after {
+            content: ''; position: absolute; width: 400px; height: 400px; border-radius: 50%;
+            bottom: -100px; left: -100px;
+            background: radial-gradient(circle, rgba(16,185,129,0.06), transparent 70%);
+        }
+        .hero_grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;
+            position: relative; z-index: 1;
+        }
+        .hero_tag {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+            color: var(--accent-dark); background: #ecfdf5; border: 1px solid #a7f3d0;
+            border-radius: 999px; padding: 0.35rem 0.8rem; margin-bottom: 1.2rem;
+        }
+        .hero h1 {
+            font-size: clamp(2.2rem, 4.5vw, 3.4rem); font-weight: 900;
+            line-height: 1.15; margin-bottom: 1.2rem; color: var(--primary-dark);
+        }
+        .hero h1 em { font-style: normal; color: var(--primary); }
+        .hero_desc {
+            font-size: 1.1rem; color: var(--muted); margin-bottom: 1.8rem;
+            max-width: 520px; line-height: 1.7;
+        }
+        .hero_btns { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+
+        .hero_social_proof {
+            display: flex; align-items: center; gap: 0.7rem;
+            color: var(--muted); font-size: 0.88rem; font-weight: 500;
+        }
+        .avatars { display: flex; }
+        .avatars span {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: grid; place-items: center; font-size: 0.75rem; font-weight: 700;
+            color: #fff; margin-left: -8px; border: 2px solid #fff;
+        }
+        .avatars span:first-child { margin-left: 0; }
+
+        /* Panel preview */
+        .hero_preview {
+            background: var(--surface); border-radius: 20px;
+            box-shadow: var(--shadow-lg); border: 1px solid var(--line);
             overflow: hidden;
         }
-
-        .premium_badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            font-size: 0.76rem;
-            font-weight: 800;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            color: #0f3e67;
-            background: linear-gradient(135deg, #d7ebff, #e8f7ff);
-            border: 1px solid #b7d6f2;
-            border-radius: 999px;
-            padding: 0.38rem 0.75rem;
-            margin-bottom: 0.9rem;
+        .preview_bar {
+            background: var(--primary-dark); padding: 0.7rem 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
         }
+        .preview_dot { width: 10px; height: 10px; border-radius: 50%; }
+        .preview_bar_title {
+            color: rgba(255,255,255,0.7); font-size: 0.78rem; font-weight: 600; margin-left: 0.5rem;
+        }
+        .preview_body { padding: 1.2rem; }
+        .preview_stats {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-bottom: 1rem;
+        }
+        .preview_stat {
+            background: var(--primary-light); border-radius: 10px; padding: 0.7rem; text-align: center;
+        }
+        .preview_stat strong {
+            display: block; font-size: 1.3rem; color: var(--primary); font-weight: 800;
+        }
+        .preview_stat span { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+        .preview_kanban { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+        .kanban_col { background: #f8fafc; border-radius: 8px; padding: 0.5rem; }
+        .kanban_col_title {
+            font-size: 0.68rem; font-weight: 700; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem;
+        }
+        .kanban_card {
+            background: #fff; border: 1px solid var(--line); border-radius: 6px;
+            padding: 0.4rem 0.5rem; margin-bottom: 0.3rem; font-size: 0.72rem; color: var(--text);
+        }
+        .kanban_card small { color: var(--muted); font-size: 0.65rem; }
 
-        .hero::after {
-            content: '';
-            position: absolute;
-            width: 420px;
-            height: 420px;
-            border-radius: 999px;
-            right: -150px;
-            bottom: -220px;
-            background: radial-gradient(circle, rgba(31, 111, 178, 0.22), rgba(31, 111, 178, 0));
+        /* ─── TRUST BAR ─── */
+        .trust_bar {
+            background: #fff; border-bottom: 1px solid var(--line); padding: 1.2rem 0;
+        }
+        .trust_flex {
+            display: flex; justify-content: center; gap: 2.5rem; flex-wrap: wrap;
+            color: var(--muted); font-size: 0.88rem; font-weight: 600;
+        }
+        .trust_flex span::before { content: '✓ '; color: var(--accent); font-weight: 800; }
+
+        /* ─── SECCIONES ─── */
+        .seccion { padding: 5rem 0; }
+        .seccion_header { text-align: center; margin-bottom: 3rem; }
+        .seccion_header h2 {
+            font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 800; color: var(--primary-dark);
+            margin-bottom: 0.6rem;
+        }
+        .seccion_header p { color: var(--muted); max-width: 600px; margin: 0 auto; font-size: 1.05rem; }
+
+        /* ─── FEATURES GRID ─── */
+        .features_grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+        .feature_card {
+            background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+            padding: 1.5rem; transition: all 0.25s;
+        }
+        .feature_card:hover {
+            transform: translateY(-4px); box-shadow: var(--shadow);
+            border-color: rgba(26,86,219,0.2);
+        }
+        .feature_icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: grid; place-items: center; margin-bottom: 1rem; font-size: 1.3rem;
+        }
+        .feature_card h3 { font-size: 1.05rem; margin-bottom: 0.5rem; color: var(--primary-dark); }
+        .feature_card p { font-size: 0.9rem; color: var(--muted); line-height: 1.55; }
+
+        /* ─── MODULES ─── */
+        .modulos_bg {
+            background: linear-gradient(180deg, #f0f5ff 0%, #fff 100%);
+            border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+        }
+        .modulos_grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .modulo_card {
+            background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+            padding: 1.8rem; transition: all 0.25s;
+        }
+        .modulo_card:hover { box-shadow: var(--shadow); }
+        .modulo_card h3 {
+            font-size: 1.15rem; color: var(--primary-dark); margin-bottom: 0.4rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .modulo_card p { color: var(--muted); font-size: 0.92rem; margin-bottom: 1rem; }
+        .check_list { list-style: none; display: grid; gap: 0.5rem; }
+        .check_list li {
+            font-size: 0.9rem; color: var(--text); padding: 0.5rem 0.7rem;
+            background: #f8fafc; border-radius: 8px; font-weight: 500;
+        }
+        .check_list li::before { content: '✓ '; color: var(--accent); font-weight: 800; }
+
+        /* ─── ROLES ─── */
+        .roles_section { background: var(--primary-dark); color: #fff; }
+        .roles_section .seccion_header h2 { color: #fff; }
+        .roles_section .seccion_header p { color: rgba(255,255,255,0.65); }
+        .roles_grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        .role_card {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: var(--radius); padding: 1.3rem; text-align: center;
+            transition: all 0.25s;
+        }
+        .role_card:hover { background: rgba(255,255,255,0.1); transform: translateY(-3px); }
+        .role_level {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: 10px; font-size: 0.85rem; font-weight: 800;
+            background: rgba(16,185,129,0.2); color: var(--accent); margin-bottom: 0.7rem;
+        }
+        .role_card h4 { font-size: 0.95rem; margin-bottom: 0.3rem; }
+        .role_card p { font-size: 0.8rem; color: rgba(255,255,255,0.55); line-height: 1.45; }
+
+        /* ─── STATS ─── */
+        .stats_section {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: #fff; text-align: center;
+        }
+        .stats_section .seccion_header h2 { color: #fff; }
+        .stats_section .seccion_header p { color: rgba(255,255,255,0.7); }
+        .stats_grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+        .stat_item { padding: 1rem; }
+        .stat_item strong {
+            display: block; font-size: 2.5rem; font-weight: 900; color: var(--accent); margin-bottom: 0.3rem;
+        }
+        .stat_item p { font-size: 0.9rem; color: rgba(255,255,255,0.75); }
+
+        /* ─── PRECIOS ─── */
+        .precios_bg { background: #fff; }
+        .planes_grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+        .plan_card {
+            border: 1.5px solid var(--line); border-radius: var(--radius);
+            padding: 2rem 1.5rem; background: #fff; transition: all 0.25s;
+            display: flex; flex-direction: column;
+        }
+        .plan_card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+        .plan_destacado {
+            border-color: var(--primary); position: relative;
+            box-shadow: 0 0 0 1px var(--primary), var(--shadow);
+        }
+        .plan_badge {
+            position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+            background: var(--primary); color: #fff; font-size: 0.72rem; font-weight: 700;
+            padding: 0.3rem 0.9rem; border-radius: 999px; white-space: nowrap;
+        }
+        .plan_card h3 { font-size: 1.15rem; color: var(--primary-dark); margin-bottom: 0.2rem; }
+        .plan_card .plan_sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 1rem; }
+        .plan_precio {
+            font-size: 2.5rem; font-weight: 900; color: var(--primary-dark); margin-bottom: 0.2rem;
+        }
+        .plan_precio small { font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+        .plan_periodo { color: var(--muted); font-size: 0.82rem; margin-bottom: 1.5rem; }
+        .plan_features {
+            list-style: none; display: grid; gap: 0.6rem; margin-bottom: 1.5rem; flex: 1;
+        }
+        .plan_features li { font-size: 0.88rem; color: var(--text); font-weight: 500; }
+        .plan_features li::before { content: '✓ '; color: var(--accent); font-weight: 800; }
+
+        /* ─── FAQ ─── */
+        .faq_bg {
+            background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+            border-top: 1px solid var(--line);
+        }
+        .faq_list { max-width: 760px; margin: 0 auto; }
+        details {
+            border: 1px solid var(--line); border-radius: 12px;
+            padding: 1rem 1.2rem; background: #fff; margin-bottom: 0.7rem;
+            transition: all 0.2s;
+        }
+        details[open] { box-shadow: var(--shadow-sm); border-color: rgba(26,86,219,0.2); }
+        summary {
+            font-weight: 700; font-size: 0.98rem; color: var(--primary-dark); cursor: pointer;
+            list-style: none; display: flex; justify-content: space-between; align-items: center;
+        }
+        summary::after { content: '+'; font-size: 1.3rem; color: var(--muted); font-weight: 300; }
+        details[open] summary::after { content: '−'; }
+        summary::-webkit-details-marker { display: none; }
+        details p { margin-top: 0.8rem; color: var(--muted); font-size: 0.92rem; line-height: 1.65; }
+
+        /* ─── CTA FINAL ─── */
+        .cta_section { background: linear-gradient(180deg, #f8fafc 0%, #f0f5ff 100%); }
+        .cta_box {
+            background: #fff; border: 1px solid var(--line); border-radius: 20px;
+            box-shadow: var(--shadow-lg); padding: 3rem; text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .cta_box::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(120deg, rgba(26,86,219,0.03), rgba(16,185,129,0.03));
             pointer-events: none;
         }
-
-        .hero_grid {
-            display: grid;
-            grid-template-columns: 1.15fr 0.85fr;
-            gap: 2.2rem;
-            align-items: center;
-        }
-
-        .hero h1 {
-            font-size: clamp(2rem, 4vw, 3.2rem);
-            margin-bottom: 1rem;
-            line-height: 1.2;
-            color: var(--blue-900);
-        }
-
-        .hero h1 span {
-            color: var(--blue-600);
-        }
-
-        .hero p {
-            font-size: 1.06rem;
-            color: var(--muted);
-            max-width: 630px;
-            margin-bottom: 1.6rem;
-        }
-
-        .hero_bullets {
-            list-style: none;
-            display: grid;
-            gap: 0.5rem;
-            margin-bottom: 1.6rem;
-            color: #385066;
-            font-weight: 600;
-        }
-
-        .hero_bullets li::before {
-            content: '✓';
-            color: var(--blue-600);
-            margin-right: 0.5rem;
-            font-weight: 800;
-        }
-
-        .hero_botones {
-            display: flex;
-            gap: 0.7rem;
-            flex-wrap: wrap;
-        }
-
-        .hero_panel {
-            background: linear-gradient(170deg, rgba(255, 255, 255, 0.96), rgba(244, 250, 255, 0.94));
-            border: 1px solid rgba(182, 209, 233, 0.55);
-            border-radius: 18px;
-            box-shadow: var(--shadow);
-            padding: 1.1rem;
-            backdrop-filter: blur(6px);
-        }
-
-        .panel_head {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-            color: var(--muted);
-            font-size: 0.86rem;
-            font-weight: 600;
-        }
-
-        .panel_metricas {
-            display: grid;
-            gap: 0.75rem;
-        }
-
-        .metrica {
-            background: #f7fbff;
-            border: 1px solid #e3eef8;
-            border-radius: 12px;
-            padding: 0.75rem 0.9rem;
-        }
-
-        .metrica strong {
-            display: block;
-            font-size: 1.2rem;
-            color: var(--blue-800);
-        }
-
-        .metrica span {
-            color: var(--muted);
-            font-size: 0.9rem;
-        }
-
-        .barra_confianza {
-            padding: 1rem 0;
-            border-bottom: 1px solid #edf3f9;
-            background: #fff;
-        }
-
-        .confianza_flex {
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-            color: #45617a;
-            font-size: 0.92rem;
-            font-weight: 600;
-        }
-
-        .seccion {
-            padding: 4.2rem 0;
-        }
-
-        .seccion h2 {
-            font-size: clamp(1.6rem, 2.8vw, 2.25rem);
-            color: var(--blue-900);
-            margin-bottom: 0.7rem;
-        }
-
-        .seccion_intro {
-            color: var(--muted);
-            margin-bottom: 1.8rem;
-            max-width: 760px;
-        }
-
-        .grid_3 {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1rem;
-        }
-
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            padding: 1.2rem;
-            box-shadow: 0 8px 18px rgba(31, 45, 61, 0.06);
-            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            border-color: #c7ddf0;
-            box-shadow: 0 14px 26px rgba(31, 45, 61, 0.12);
-        }
-
-        .card h3 {
-            font-size: 1.06rem;
-            margin-bottom: 0.45rem;
-            color: var(--blue-800);
-        }
-
-        .card p {
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
-
-        .icono {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: grid;
-            place-items: center;
-            margin-bottom: 0.8rem;
-            background: linear-gradient(135deg, #e7f2fc, #f3f9ff);
-            color: var(--blue-700);
-            font-size: 1.1rem;
-            font-weight: 800;
-        }
-
-        .modulos {
-            background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
-            border-top: 1px solid #edf3f9;
-            border-bottom: 1px solid #edf3f9;
-        }
-
-        .modulos_layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.1rem;
-        }
-
-        .lista_checks {
-            list-style: none;
-            display: grid;
-            gap: 0.65rem;
-            margin-top: 0.8rem;
-        }
-
-        .lista_checks li {
-            background: #fff;
-            border: 1px solid #e3ecf5;
-            border-radius: 10px;
-            padding: 0.65rem 0.8rem;
-            font-size: 0.93rem;
-            color: #3f5870;
-        }
-
-        .lista_checks li::before {
-            content: '●';
-            color: var(--blue-600);
-            margin-right: 0.5rem;
-        }
-
-        .valor {
-            background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
-            color: #fff;
-            text-align: center;
-        }
-
-        .valor h2 {
-            color: #fff;
-            margin-bottom: 1.5rem;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1rem;
-        }
-
-        .stat {
-            background: rgba(255, 255, 255, 0.09);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 1rem;
-        }
-
-        .stat strong {
-            display: block;
-            font-size: 1.7rem;
-            color: var(--accent);
-            margin-bottom: 0.3rem;
-        }
-
-        .precios {
-            background: #fff;
-        }
-
-        .planes {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1rem;
-        }
-
-        .plan {
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            padding: 1.2rem;
-            background: #fff;
-            box-shadow: 0 8px 20px rgba(31, 45, 61, 0.07);
-            transition: transform 0.22s ease, box-shadow 0.22s ease;
-        }
-
-        .plan:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 16px 30px rgba(31, 45, 61, 0.15);
-        }
-
-        .plan h3 {
-            color: var(--blue-800);
-            margin-bottom: 0.3rem;
-        }
-
-        .precio {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--blue-900);
-            margin: 0.5rem 0 0.8rem;
-        }
-
-        .plan ul {
-            list-style: none;
-            display: grid;
-            gap: 0.45rem;
-            margin-bottom: 1rem;
-            color: var(--muted);
-            font-size: 0.93rem;
-        }
-
-        .plan_destacado {
-            border: 2px solid var(--blue-600);
-            position: relative;
-        }
-
-        .badge {
-            position: absolute;
-            right: 12px;
-            top: 12px;
-            background: var(--blue-600);
-            color: #fff;
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 0.24rem 0.55rem;
-            border-radius: 999px;
-        }
-
-        .faq {
-            background: #f8fbff;
-            border-top: 1px solid #edf3f9;
-            border-bottom: 1px solid #edf3f9;
-        }
-
-        details {
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            padding: 0.85rem 1rem;
-            background: #fff;
-            margin-bottom: 0.7rem;
-            box-shadow: 0 6px 14px rgba(31, 45, 61, 0.05);
-        }
-
-        summary {
-            font-weight: 700;
-            color: var(--blue-800);
-            cursor: pointer;
-        }
-
-        details p {
-            margin-top: 0.65rem;
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
-
-        .cta_final {
-            text-align: center;
-            background: linear-gradient(180deg, #ffffff 0%, #f3f9ff 100%);
-        }
-
-        .cta_box {
-            background: #fff;
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            padding: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
+        .cta_box h2 { font-size: 2rem; color: var(--primary-dark); margin-bottom: 0.6rem; position: relative; }
+        .cta_box > p { color: var(--muted); max-width: 550px; margin: 0 auto 1.5rem; position: relative; }
 
         .contacto_grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-top: 1.2rem;
-            text-align: left;
-            position: relative;
-            z-index: 1;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+            text-align: left; position: relative;
         }
-
         .contacto_info {
-            border: 1px solid #d8e8f6;
-            border-radius: 12px;
-            background: #f6fbff;
-            padding: 1rem;
-            color: #3f5870;
-            font-size: 0.94rem;
+            background: #f8fafc; border: 1px solid var(--line); border-radius: 14px;
+            padding: 1.5rem; display: flex; flex-direction: column; justify-content: center;
         }
-
-        .contacto_info h3 {
-            color: var(--blue-800);
-            margin-bottom: 0.45rem;
-            font-size: 1.04rem;
+        .contacto_info h3 { color: var(--primary-dark); margin-bottom: 0.6rem; font-size: 1.1rem; }
+        .contacto_info p { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .contacto_info .info_dato {
+            display: flex; align-items: center; gap: 0.4rem;
+            font-size: 0.9rem; color: var(--text); font-weight: 600; margin-top: 0.3rem;
         }
-
         .contacto_form {
-            border: 1px solid #d8e8f6;
-            border-radius: 12px;
-            background: #ffffff;
-            padding: 1rem;
+            background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 1.5rem;
         }
-
-        .campo {
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
-            margin-bottom: 0.65rem;
-        }
-
+        .campo { margin-bottom: 0.8rem; }
         .campo label {
-            color: #385066;
-            font-size: 0.88rem;
-            font-weight: 700;
+            display: block; font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 0.3rem;
         }
-
-        .campo input,
-        .campo textarea {
-            border: 1px solid #cfe1f0;
-            background: #f8fcff;
-            border-radius: 10px;
-            padding: 0.62rem 0.72rem;
-            font-size: 0.92rem;
-            color: var(--text);
-            outline: none;
+        .campo input, .campo select, .campo textarea {
+            width: 100%; border: 1.5px solid var(--line); border-radius: 10px;
+            padding: 0.65rem 0.8rem; font-size: 0.9rem; color: var(--text);
+            background: #fafbfc; outline: none; font-family: inherit; transition: all 0.2s;
         }
-
-        .campo input:focus,
-        .campo textarea:focus {
-            border-color: #7db6e2;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.12);
-            background: #fff;
+        .campo input:focus, .campo select:focus, .campo textarea:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,219,0.08); background: #fff;
         }
+        .contacto_form .btn { width: 100%; padding: 0.8rem; }
 
-        .contacto_form .btn {
-            width: 100%;
-        }
-
-        .cta_box::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(120deg, rgba(52, 152, 219, 0.08), rgba(78, 205, 196, 0.04));
-            pointer-events: none;
-        }
-
-        .cta_box p {
-            color: var(--muted);
-            max-width: 680px;
-            margin: 0.8rem auto 1.3rem;
-        }
-
+        /* ─── FOOTER ─── */
         footer {
-            text-align: center;
-            padding: 1.6rem;
-            background: #0f1724;
-            color: #94a3b8;
-            font-size: 0.9rem;
+            background: #0f172a; color: #94a3b8; padding: 2.5rem 0; text-align: center;
+        }
+        .footer_inner {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+        }
+        .footer_logo { font-size: 1.2rem; font-weight: 800; color: #e2e8f0; }
+        .footer_logo span { color: var(--primary); }
+        .footer_links { display: flex; gap: 1.5rem; }
+        .footer_links a { color: #94a3b8; text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+        .footer_links a:hover { color: #e2e8f0; }
+        .footer_copy {
+            width: 100%; text-align: center; margin-top: 1.5rem; padding-top: 1.5rem;
+            border-top: 1px solid #1e293b; font-size: 0.82rem;
         }
 
-        @media (max-width: 768px) {
-            nav { display: none; }
-            .hero { padding-top: 7.2rem; }
-            .hero_grid,
-            .modulos_layout,
-            .grid_3,
-            .stats,
-            .planes {
-                grid-template-columns: 1fr;
-            }
-            .hero_botones {
-                flex-direction: column;
-            }
-            .btn {
-                width: 100%;
-            }
-            .cta_box {
-                padding: 1.4rem;
-            }
-            .contacto_grid {
-                grid-template-columns: 1fr;
-            }
-            .hero::after {
-                width: 280px;
-                height: 280px;
-                right: -100px;
-                bottom: -160px;
-            }
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 1024px) {
+            .features_grid, .roles_grid, .stats_grid { grid-template-columns: repeat(2, 1fr); }
+            .planes_grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
         }
+        @media (max-width: 768px) {
+            nav {
+                display: none; position: absolute; top: 100%; left: 0; right: 0;
+                background: #fff; flex-direction: column; padding: 1rem;
+                border-bottom: 1px solid var(--line); box-shadow: var(--shadow);
+            }
+            nav.active { display: flex; }
+            .hamburger { display: flex; }
+            .hero { padding: 7.5rem 0 3rem; }
+            .hero_grid { grid-template-columns: 1fr; text-align: center; }
+            .hero_desc { margin-left: auto; margin-right: auto; }
+            .hero_btns { justify-content: center; }
+            .hero_social_proof { justify-content: center; }
+            .hero_preview { display: none; }
+            .features_grid, .modulos_grid, .roles_grid, .stats_grid { grid-template-columns: 1fr; }
+            .contacto_grid { grid-template-columns: 1fr; }
+            .footer_inner { justify-content: center; text-align: center; }
+            .footer_links { justify-content: center; }
+        }
+
+        /* ─── ANIMATIONS ─── */
+        .fade-up {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-up.visible { opacity: 1; transform: translateY(0); }
     </style>
 </head>
 <body>
 
+    <!-- ═══ HEADER ═══ -->
     <header>
         <div class="header_inner">
-            <div class="logo">Tino<span>Prop</span></div>
+            <a href="#" class="logo">Tino<span>Prop</span></a>
+            <button class="hamburger" onclick="document.querySelector('nav').classList.toggle('active')" aria-label="Menú">
+                <span></span><span></span><span></span>
+            </button>
             <nav>
                 <a href="#funcionalidades">Funcionalidades</a>
                 <a href="#modulos">Módulos</a>
+                <a href="#roles">Roles</a>
                 <a href="#precios">Precios</a>
                 <a href="#faq">FAQ</a>
-                <a href="mailto:demo@tinoprop.com?subject=Solicitud%20de%20demo%20TinoProp&body=Hola%20equipo%20de%20TinoProp%2C%20quiero%20una%20demo." class="btn btn-primario">Solicitar demo</a>
+                <a href="#contacto" class="btn btn-primario" style="margin-left:0.5rem;">Solicitar demo</a>
             </nav>
         </div>
     </header>
 
+    <!-- ═══ HERO ═══ -->
     <section class="hero">
         <div class="contenedor hero_grid">
             <div>
-                <span class="premium_badge">◆ Edición Ultra Premium</span>
-                <h1>El CRM inmobiliario para <span>captar más y vender mejor</span></h1>
-                <p>TinoProp centraliza tus clientes, propiedades, recordatorios, búsqueda de mercado y documentos en una sola plataforma. Menos tareas manuales, más cierres.</p>
+                <span class="hero_tag">🏠 CRM Inmobiliario Multi-Tenant</span>
+                <h1>Gestiona tu agencia<br>con <em>un solo sistema</em></h1>
+                <p class="hero_desc">TinoProp centraliza clientes, propiedades, visitas, ofertas, documentos y equipo en una plataforma pensada para inmobiliarias. Multi-tenant, multi-rol, con Kanban y matching inteligente.</p>
 
-                <ul class="hero_bullets">
-                    <li>Pipeline visual para comprador y vendedor</li>
-                    <li>Control completo de agenda y seguimientos</li>
-                    <li>Procesos claros para equipos pequeños y medianos</li>
-                </ul>
+                <div class="hero_btns">
+                    <a href="#contacto" class="btn btn-primario">Solicitar demo gratuita</a>
+                    <a href="#funcionalidades" class="btn btn-secundario">Explorar funcionalidades</a>
+                </div>
 
-                <div class="hero_botones">
-                    <a href="mailto:demo@tinoprop.com?subject=Solicitud%20de%20demo%20TinoProp&body=Hola%20equipo%20de%20TinoProp%2C%20quiero%20una%20demo." class="btn btn-primario">Quiero una demo</a>
-                    <a href="#precios" class="btn btn-secundario">Ver planes</a>
+                <div class="hero_social_proof">
+                    <div class="avatars">
+                        <span style="background:#3b82f6;">V</span>
+                        <span style="background:#10b981;">A</span>
+                        <span style="background:#f59e0b;">M</span>
+                    </div>
+                    Diseñado para agencias que quieren escalar
                 </div>
             </div>
 
-            <aside class="hero_panel">
-                <div class="panel_head">
-                    <span>Resumen del día</span>
-                    <span>Equipo Comercial</span>
+            <div class="hero_preview">
+                <div class="preview_bar">
+                    <span class="preview_dot" style="background:#ef4444;"></span>
+                    <span class="preview_dot" style="background:#f59e0b;"></span>
+                    <span class="preview_dot" style="background:#22c55e;"></span>
+                    <span class="preview_bar_title">TinoProp — Dashboard</span>
                 </div>
-                <div class="panel_metricas">
-                    <div class="metrica">
-                        <strong>14 oportunidades</strong>
-                        <span>prospectos activos en seguimiento</span>
+                <div class="preview_body">
+                    <div class="preview_stats">
+                        <div class="preview_stat">
+                            <strong>47</strong>
+                            <span>Propiedades</span>
+                        </div>
+                        <div class="preview_stat">
+                            <strong>128</strong>
+                            <span>Clientes</span>
+                        </div>
+                        <div class="preview_stat">
+                            <strong>12</strong>
+                            <span>Visitas hoy</span>
+                        </div>
                     </div>
-                    <div class="metrica">
-                        <strong>6 visitas programadas</strong>
-                        <span>sincronizadas en recordatorios</span>
-                    </div>
-                    <div class="metrica">
-                        <strong>3 cierres potenciales</strong>
-                        <span>en fase final esta semana</span>
+                    <div class="preview_kanban">
+                        <div class="kanban_col">
+                            <div class="kanban_col_title">Captación</div>
+                            <div class="kanban_card">Ático Ruzafa<br><small>245.000 €</small></div>
+                            <div class="kanban_card">Piso Campanar<br><small>189.000 €</small></div>
+                        </div>
+                        <div class="kanban_col">
+                            <div class="kanban_col_title">Visitas</div>
+                            <div class="kanban_card">Chalet Torrent<br><small>320.000 €</small></div>
+                        </div>
+                        <div class="kanban_col">
+                            <div class="kanban_col_title">Cierre</div>
+                            <div class="kanban_card">Duplex Centro<br><small>255.000 €</small></div>
+                        </div>
                     </div>
                 </div>
-            </aside>
+            </div>
         </div>
     </section>
 
-    <div class="barra_confianza">
-        <div class="contenedor confianza_flex">
-            <span>✔ CRM inmobiliario especializado</span>
-            <span>✔ Enfoque en productividad real</span>
-            <span>✔ Flujo comercial de punta a punta</span>
-            <span>✔ Base sólida para escalar tu equipo</span>
+    <!-- ═══ TRUST BAR ═══ -->
+    <div class="trust_bar">
+        <div class="contenedor trust_flex">
+            <span>Multi-tenant (multi-oficina)</span>
+            <span>7 roles jerárquicos</span>
+            <span>19 módulos integrados</span>
+            <span>Seguridad avanzada</span>
+            <span>Español e Inglés</span>
         </div>
     </div>
 
+    <!-- ═══ FUNCIONALIDADES ═══ -->
     <section class="seccion" id="funcionalidades">
         <div class="contenedor">
-            <h2>Funcionalidades clave para tu inmobiliaria</h2>
-            <p class="seccion_intro">No es un CRM genérico: está pensado para el trabajo diario de captación, gestión de cartera y seguimiento comercial inmobiliario.</p>
+            <div class="seccion_header fade-up">
+                <h2>Todo lo que tu agencia necesita</h2>
+                <p>No es un CRM genérico adaptado: está construido desde cero para el flujo de trabajo real de una inmobiliaria.</p>
+            </div>
 
-            <div class="grid_3">
-                <article class="card">
-                    <div class="icono">01</div>
-                    <h3>Pipeline visual por etapas</h3>
-                    <p>Gestiona prospectos comprador y vendedor con tablero tipo kanban y prioriza acciones sin perder contexto.</p>
+            <div class="features_grid">
+                <article class="feature_card fade-up">
+                    <div class="feature_icon" style="background:#eff6ff;color:#3b82f6;">📊</div>
+                    <h3>Dashboard con KPIs</h3>
+                    <p>Panel de control con métricas de negocio, gráficos interactivos y KPIs personalizables por usuario y rol.</p>
                 </article>
-
-                <article class="card">
-                    <div class="icono">02</div>
-                    <h3>Clientes y propiedades unificados</h3>
-                    <p>Relaciona cada cliente con inmuebles, notas internas, estado comercial y próximos pasos en una sola vista.</p>
+                <article class="feature_card fade-up">
+                    <div class="feature_icon" style="background:#f0fdf4;color:#22c55e;">🎯</div>
+                    <h3>Pipeline Kanban</h3>
+                    <p>Tableros drag & drop para prospectos y proceso de propiedades. Visualiza cada oportunidad por etapa en tiempo real.</p>
                 </article>
-
-                <article class="card">
-                    <div class="icono">03</div>
-                    <h3>Recordatorios operativos</h3>
-                    <p>Programa tareas, llamadas y visitas para que tu equipo ejecute a tiempo y no se enfríe ninguna oportunidad.</p>
+                <article class="feature_card fade-up">
+                    <div class="feature_icon" style="background:#fef3c7;color:#f59e0b;">🔗</div>
+                    <h3>Matching inteligente</h3>
+                    <p>Cruce automático entre lo que buscan tus compradores y las propiedades disponibles. Encuentra coincidencias al instante.</p>
                 </article>
-
-                <article class="card">
-                    <div class="icono">04</div>
-                    <h3>Búsqueda avanzada de mercado</h3>
-                    <p>Detecta oportunidades, compara zonas y cruza información de forma rápida para mejorar captación y cierre.</p>
+                <article class="feature_card fade-up">
+                    <div class="feature_icon" style="background:#fce7f3;color:#ec4899;">🚶</div>
+                    <h3>Visitas y Ofertas</h3>
+                    <p>Programa visitas, registra resultados, gestiona ofertas y contraofertas. Todo sincronizado con recordatorios automáticos.</p>
                 </article>
-
-                <article class="card">
-                    <div class="icono">05</div>
-                    <h3>Configuración por usuario</h3>
-                    <p>Preferencias de interfaz, idioma y parámetros de trabajo para una experiencia más cómoda y productiva.</p>
+                <article class="feature_card fade-up">
+                    <div class="feature_icon" style="background:#ede9fe;color:#8b5cf6;">📖</div>
+                    <h3>Centro documental</h3>
+                    <p>Sube documentos, genera PDFs y gestiona archivos por cliente o propiedad. Todo organizado y accesible en un clic.</p>
                 </article>
-
-                <article class="card">
-                    <div class="icono">06</div>
-                    <h3>Base preparada para documentos</h3>
-                    <p>Estructura lista para automatizar generación documental y reducir tiempos administrativos repetitivos.</p>
+                <article class="feature_card fade-up">
+                    <div class="feature_icon" style="background:#ecfdf5;color:#10b981;">🔒</div>
+                    <h3>Seguridad de nivel</h3>
+                    <p>Bcrypt, CSRF, XSS, rate limiting, cabeceras HTTP reforzadas y protección de directorios. Tus datos siempre seguros.</p>
+                </article>
+                <article class="feature_card fade-up">
+                    <div class="feature_icon" style="background:#fff7ed;color:#f97316;">📩</div>
+                    <h3>Tickets internos</h3>
+                    <p>Sistema de peticiones entre niveles jerárquicos: reporta errores, solicita mejoras y gestiona consultas internas.</p>
+                </article>
+                <article class="feature_card fade-up">
+                    <div class="feature_icon" style="background:#f0f9ff;color:#0ea5e9;">🌐</div>
+                    <h3>Bilingüe ES/EN</h3>
+                    <p>Interfaz en Español e Inglés con cambio instantáneo. Ideal para equipos internacionales o mercados turísticos.</p>
+                </article>
+                <article class="feature_card fade-up">
+                    <div class="feature_icon" style="background:#faf5ff;color:#a855f7;">🎨</div>
+                    <h3>Temas y personalización</h3>
+                    <p>Modo claro, oscuro o automático. Densidad de tablas ajustable. Etiquetas de colores y filtros guardados por usuario.</p>
                 </article>
             </div>
         </div>
     </section>
 
-    <section class="seccion modulos" id="modulos">
-        <div class="contenedor modulos_layout">
-            <article class="card">
-                <h3>Módulo comercial</h3>
-                <p>Diseñado para mantener visibilidad total de tu embudo de negocio y acelerar el avance de cada contacto.</p>
-                <ul class="lista_checks">
-                    <li>Altas rápidas de clientes y propiedades</li>
-                    <li>Seguimiento por fase y operación</li>
-                    <li>Notas internas por registro</li>
-                    <li>Historial claro para cada oportunidad</li>
-                </ul>
-            </article>
+    <!-- ═══ MÓDULOS ═══ -->
+    <section class="seccion modulos_bg" id="modulos">
+        <div class="contenedor">
+            <div class="seccion_header fade-up">
+                <h2>19 módulos integrados</h2>
+                <p>Cada parte de tu operación cubierta: desde la captación hasta el post-venta, pasando por la gestión del equipo.</p>
+            </div>
 
-            <article class="card">
-                <h3>Módulo operativo</h3>
-                <p>Controla tareas y organización diaria para que el equipo comercial mantenga ritmo constante.</p>
-                <ul class="lista_checks">
-                    <li>Recordatorios y agenda de acciones</li>
-                    <li>Filtros y búsquedas por criterios reales</li>
-                    <li>Panel de estado de pipeline</li>
-                    <li>Preparado para escalado funcional</li>
-                </ul>
-            </article>
+            <div class="modulos_grid">
+                <article class="modulo_card fade-up">
+                    <h3>📈 Gestión comercial</h3>
+                    <p>El corazón del negocio: clientes, propiedades y pipeline comercial.</p>
+                    <ul class="check_list">
+                        <li>Clientes comprador y vendedor con fichas detalladas</li>
+                        <li>Propiedades venta y alquiler con galería de imágenes</li>
+                        <li>Prospectos con Kanban drag & drop</li>
+                        <li>Notas internas y etiquetas personalizadas</li>
+                        <li>Búsqueda avanzada con filtros multicriteria</li>
+                    </ul>
+                </article>
+
+                <article class="modulo_card fade-up">
+                    <h3>🔄 Operaciones</h3>
+                    <p>Controla cada etapa del proceso comercial de principio a fin.</p>
+                    <ul class="check_list">
+                        <li>Proceso Kanban: captación → publicación → cierre</li>
+                        <li>Visitas programadas con sincronización de agenda</li>
+                        <li>Ofertas con estados y contraofertas</li>
+                        <li>Matching automático demanda-oferta</li>
+                        <li>Post-venta y seguimiento posterior</li>
+                    </ul>
+                </article>
+
+                <article class="modulo_card fade-up">
+                    <h3>⚙️ Gestión y soporte</h3>
+                    <p>Herramientas para supervisores, jefes y administración.</p>
+                    <ul class="check_list">
+                        <li>Recordatorios y notificaciones inteligentes</li>
+                        <li>Importación masiva por CSV</li>
+                        <li>Historial de actividad (log de auditoría)</li>
+                        <li>Peticiones / tickets entre niveles</li>
+                        <li>Legal: T&C versionados con aceptación obligatoria</li>
+                    </ul>
+                </article>
+
+                <article class="modulo_card fade-up">
+                    <h3>🛡️ Panel SuperAdmin</h3>
+                    <p>Control total de la plataforma para el administrador global.</p>
+                    <ul class="check_list">
+                        <li>Dashboard global multi-inmobiliaria</li>
+                        <li>Alta y gestión de inmobiliarias (tenants)</li>
+                        <li>Control de usuarios de toda la plataforma</li>
+                        <li>Gestión centralizada de tickets de soporte</li>
+                        <li>Configuración y límites por inmobiliaria</li>
+                    </ul>
+                </article>
+            </div>
         </div>
     </section>
 
-    <section class="seccion valor">
+    <!-- ═══ ROLES ═══ -->
+    <section class="seccion roles_section" id="roles">
         <div class="contenedor">
-            <h2>Resultados que puedes esperar</h2>
-            <div class="stats">
-                <div class="stat">
-                    <strong>-35%</strong>
-                    <p>en tiempo administrativo operativo</p>
+            <div class="seccion_header fade-up">
+                <h2>7 roles, un sistema</h2>
+                <p>Cada miembro del equipo ve exactamente lo que necesita. Ni más, ni menos.</p>
+            </div>
+
+            <div class="roles_grid">
+                <article class="role_card fade-up">
+                    <div class="role_level">99</div>
+                    <h4>Super Admin</h4>
+                    <p>Control absoluto de toda la plataforma y todas las inmobiliarias</p>
+                </article>
+                <article class="role_card fade-up">
+                    <div class="role_level">5</div>
+                    <h4>Jefe</h4>
+                    <p>Director de inmobiliaria con control total de su tenant</p>
+                </article>
+                <article class="role_card fade-up">
+                    <div class="role_level">4</div>
+                    <h4>Supervisor</h4>
+                    <p>Supervisa agentes con acceso a herramientas de sistema</p>
+                </article>
+                <article class="role_card fade-up">
+                    <div class="role_level">3</div>
+                    <h4>Marketing</h4>
+                    <p>Acceso a difusión con visibilidad comprador y vendedor</p>
+                </article>
+                <article class="role_card fade-up">
+                    <div class="role_level">2</div>
+                    <h4>Agente</h4>
+                    <p>Agente completo con ambos lados del negocio</p>
+                </article>
+                <article class="role_card fade-up">
+                    <div class="role_level">1</div>
+                    <h4>Agente Vendedor</h4>
+                    <p>Especialista en captación y venta de propiedades</p>
+                </article>
+                <article class="role_card fade-up">
+                    <div class="role_level">1</div>
+                    <h4>Agente Comprador</h4>
+                    <p>Especialista en búsqueda y asesoría al comprador</p>
+                </article>
+                <article class="role_card fade-up" style="background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.25);">
+                    <div class="role_level" style="background:rgba(16,185,129,0.3);">∞</div>
+                    <h4>Multi-Tenant</h4>
+                    <p>Cada inmobiliaria aislada con sus propios datos y equipo</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ ESTADÍSTICAS ═══ -->
+    <section class="seccion stats_section">
+        <div class="contenedor">
+            <div class="seccion_header fade-up">
+                <h2>Construido para resultados</h2>
+                <p>Números que hablan del alcance de la plataforma.</p>
+            </div>
+            <div class="stats_grid fade-up">
+                <div class="stat_item">
+                    <strong>19</strong>
+                    <p>Módulos integrados</p>
                 </div>
-                <div class="stat">
-                    <strong>+27%</strong>
-                    <p>en seguimiento efectivo de oportunidades</p>
+                <div class="stat_item">
+                    <strong>7</strong>
+                    <p>Roles jerárquicos</p>
                 </div>
-                <div class="stat">
-                    <strong>100%</strong>
-                    <p>de visibilidad del estado comercial</p>
+                <div class="stat_item">
+                    <strong>18</strong>
+                    <p>Tablas relacionadas</p>
+                </div>
+                <div class="stat_item">
+                    <strong>4</strong>
+                    <p>APIs en tiempo real</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="seccion precios" id="precios">
+    <!-- ═══ PRECIOS ═══ -->
+    <section class="seccion precios_bg" id="precios">
         <div class="contenedor">
-            <h2>Planes pensados para crecer contigo</h2>
-            <p class="seccion_intro">Landing de validación comercial. Puedes ajustar precios o condiciones según la fase de lanzamiento.</p>
+            <div class="seccion_header fade-up">
+                <h2>Planes que se adaptan a tu agencia</h2>
+                <p>Elige el plan que mejor encaje con tu operación. Todos incluyen soporte y actualizaciones.</p>
+            </div>
 
-            <div class="planes">
-                <article class="plan">
+            <div class="planes_grid fade-up">
+                <article class="plan_card">
                     <h3>Starter</h3>
-                    <p>Para agentes individuales</p>
-                    <div class="precio">49€<small>/mes</small></div>
-                    <ul>
-                        <li>Hasta 1 usuario</li>
-                        <li>CRM + propiedades + recordatorios</li>
+                    <p class="plan_sub">Para agentes independientes</p>
+                    <div class="plan_precio">49€ <small>/mes</small></div>
+                    <p class="plan_periodo">Facturación mensual · Sin permanencia</p>
+                    <ul class="plan_features">
+                        <li>1 usuario</li>
+                        <li>CRM completo (clientes + propiedades)</li>
+                        <li>Kanban de prospectos</li>
+                        <li>Recordatorios y notificaciones</li>
+                        <li>Búsqueda avanzada</li>
                         <li>Soporte por email</li>
                     </ul>
-                    <a href="#contacto" class="btn btn-secundario">Solicitar acceso</a>
+                    <a href="#contacto" class="btn btn-secundario">Empezar ahora</a>
                 </article>
 
-                <article class="plan plan_destacado">
-                    <span class="badge">Más elegido</span>
-                    <h3>Pro</h3>
-                    <p>Para equipos comerciales</p>
-                    <div class="precio">129€<small>/mes</small></div>
-                    <ul>
-                        <li>Hasta 5 usuarios</li>
-                        <li>Pipeline completo comprador/vendedor</li>
-                        <li>Búsqueda avanzada y panel operativo</li>
-                    </ul>
-                    <a href="#contacto" class="btn btn-primario">Quiero demo Pro</a>
-                </article>
-
-                <article class="plan">
-                    <h3>Agencia</h3>
-                    <p>Para operación multi-equipo</p>
-                    <div class="precio">Personalizado</div>
-                    <ul>
-                        <li>Usuarios ilimitados</li>
-                        <li>Onboarding asistido</li>
+                <article class="plan_card plan_destacado">
+                    <span class="plan_badge">⭐ Más popular</span>
+                    <h3>Profesional</h3>
+                    <p class="plan_sub">Para equipos de hasta 10 agentes</p>
+                    <div class="plan_precio">129€ <small>/mes</small></div>
+                    <p class="plan_periodo">Facturación mensual · Sin permanencia</p>
+                    <ul class="plan_features">
+                        <li>Hasta 10 usuarios con roles diferenciados</li>
+                        <li>Todo de Starter +</li>
+                        <li>Proceso Kanban completo</li>
+                        <li>Visitas, ofertas y matching</li>
+                        <li>Documentación y galería de imágenes</li>
+                        <li>Importación CSV masiva</li>
+                        <li>Historial de actividad (auditoría)</li>
                         <li>Soporte prioritario</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-verde">Solicitar demo Pro</a>
+                </article>
+
+                <article class="plan_card">
+                    <h3>Agencia</h3>
+                    <p class="plan_sub">Para oficinas y franquicias</p>
+                    <div class="plan_precio">A medida</div>
+                    <p class="plan_periodo">Presupuesto personalizado</p>
+                    <ul class="plan_features">
+                        <li>Usuarios ilimitados</li>
+                        <li>Todo de Profesional +</li>
+                        <li>Multi-oficina (tenants independientes)</li>
+                        <li>Panel SuperAdmin dedicado</li>
+                        <li>Onboarding y formación al equipo</li>
+                        <li>Soporte dedicado con SLA</li>
+                        <li>Personalización a medida</li>
                     </ul>
                     <a href="#contacto" class="btn btn-secundario">Hablar con ventas</a>
                 </article>
@@ -816,103 +775,155 @@
         </div>
     </section>
 
-    <section class="seccion faq" id="faq">
+    <!-- ═══ FAQ ═══ -->
+    <section class="seccion faq_bg" id="faq">
         <div class="contenedor">
-            <h2>Preguntas frecuentes</h2>
-            <p class="seccion_intro">Respuestas rápidas para conversaciones con potenciales clientes.</p>
+            <div class="seccion_header fade-up">
+                <h2>Preguntas frecuentes</h2>
+                <p>Resolvemos las dudas más comunes antes de empezar.</p>
+            </div>
 
-            <details>
-                <summary>¿Tinoprop es solo para compraventa?</summary>
-                <p>No. Tinoprop está preparado para trabajar tanto compraventa como alquiler desde flujos diferenciados, con visibilidad específica por operación y por tipo de cliente. Esto evita mezclar procesos comerciales que normalmente tienen tiempos y documentación distintos. Además, puedes mantener un seguimiento independiente para comprador y vendedor sin perder trazabilidad histórica, algo clave cuando gestionas muchas oportunidades en paralelo.</p>
-            </details>
-
-            <details>
-                <summary>¿Se puede usar con equipos pequeños?</summary>
-                <p>Sí. De hecho, está pensado para ser útil desde el primer día en agencias pequeñas o equipos de 1 a 5 personas, donde cada minuto cuenta y la organización suele depender de procesos manuales. La curva de adopción es corta porque la interfaz prioriza tareas diarias reales: captar, llamar, seguir y cerrar. Cuando tu operación crece, la estructura actual permite ampliar usuarios y mantener orden sin rehacer el sistema de trabajo.</p>
-            </details>
-
-            <details>
-                <summary>¿Qué aporta frente a hojas de cálculo?</summary>
-                <p>Aporta centralización operativa y control comercial continuo. Con hojas de cálculo es habitual perder contexto, duplicar datos y no tener claro en qué etapa está cada oportunidad; con Tinoprop todo queda conectado: clientes, propiedades, notas, tareas y estado del pipeline. Esto reduce errores de coordinación, mejora el seguimiento del equipo y facilita decisiones comerciales con información unificada y actualizada.</p>
-            </details>
-
-            <details>
-                <summary>¿Incluye soporte de puesta en marcha?</summary>
-                <p>Sí. Puedes incluir onboarding guiado para configurar estructura inicial, definir el flujo comercial y dejar al equipo operando con una metodología clara desde la primera semana. También es posible plantear acompañamiento en la fase de adopción para revisar uso real, corregir fricciones y estandarizar buenas prácticas. Así no se queda en “instalar y ya”, sino en implantar un proceso comercial medible.</p>
-            </details>
+            <div class="faq_list fade-up">
+                <details>
+                    <summary>¿TinoProp sirve solo para compraventa?</summary>
+                    <p>No. TinoProp gestiona tanto compraventa como alquiler con flujos diferenciados. Cada operación tiene su propio pipeline, visibilidad y documentación. Puedes llevar ambos tipos de negocio en paralelo sin mezclar procesos.</p>
+                </details>
+                <details>
+                    <summary>¿Se puede usar con equipos pequeños de 1-3 personas?</summary>
+                    <p>Sí, de hecho está diseñado para ser útil desde el primer día con una sola persona. La curva de adopción es muy corta porque prioriza tareas diarias reales: captar, llamar, hacer seguimiento y cerrar. Cuando el equipo crece, la estructura de roles y permisos se adapta sin necesidad de migración.</p>
+                </details>
+                <details>
+                    <summary>¿Qué aporta frente a hojas de cálculo o un CRM genérico?</summary>
+                    <p>Centralización real del negocio inmobiliario. Clientes, propiedades, visitas, ofertas, documentos y pipeline están interconectados. No duplicas datos, no pierdes contexto y tu equipo sabe exactamente en qué etapa está cada oportunidad. Un CRM genérico requiere adaptación costosa; TinoProp funciona desde el día 1 para inmobiliarias.</p>
+                </details>
+                <details>
+                    <summary>¿Mis datos están seguros?</summary>
+                    <p>Absolutamente. TinoProp implementa contraseñas con bcrypt, protección CSRF y XSS, rate limiting contra fuerza bruta, cabeceras de seguridad HTTP reforzadas, directorios protegidos y aislamiento de datos multi-tenant. Cada inmobiliaria solo ve sus propios datos.</p>
+                </details>
+                <details>
+                    <summary>¿Incluye soporte de puesta en marcha?</summary>
+                    <p>Sí. En los planes Pro y Agencia incluimos onboarding guiado para configurar la estructura inicial, definir el flujo comercial y dejar al equipo operando con metodología clara. También ofrecemos acompañamiento posterior para optimizar el uso en las primeras semanas.</p>
+                </details>
+                <details>
+                    <summary>¿Puedo gestionar varias oficinas desde una misma plataforma?</summary>
+                    <p>Sí. La arquitectura multi-tenant permite gestionar múltiples inmobiliarias desde una única instalación. Cada oficina tiene sus propios datos, usuarios y configuración, completamente aislados entre sí. El SuperAdmin tiene visibilidad global de todas.</p>
+                </details>
+            </div>
         </div>
     </section>
 
-    <section class="seccion cta_final" id="contacto">
+    <!-- ═══ CTA / CONTACTO ═══ -->
+    <section class="seccion cta_section" id="contacto">
         <div class="contenedor">
-            <div class="cta_box">
-                <h2>¿Quieres lanzar Tinoprop en tu agencia?</h2>
-                <p>Si estás validando producto o cerrando primeros clientes, esta landing ya está preparada para presentar propuesta de valor, módulos, precios y cierre comercial.</p>
-                <div class="hero_botones" style="justify-content:center;">
-                    <a href="mailto:demo@tinoprop.com?subject=Solicitud%20de%20demo%20TinoProp&body=Hola%20equipo%20de%20TinoProp%2C%20quiero%20agendar%20una%20demo." class="btn btn-primario">Agendar demo</a>
-                    <a href="#precios" class="btn btn-secundario">Revisar planes</a>
-                </div>
+            <div class="cta_box fade-up">
+                <h2>¿Listo para transformar tu agencia?</h2>
+                <p>Solicita una demo gratuita y descubre cómo TinoProp puede optimizar cada área de tu negocio inmobiliario.</p>
 
                 <div class="contacto_grid">
                     <article class="contacto_info">
-                        <h3>Solicitud directa de demo</h3>
-                        <p>Completa este formulario y al pulsar “Enviar solicitud” se abrirá tu correo con todos los datos ya cargados para que puedas enviarlo en un clic.</p>
-                        <p style="margin-top:0.7rem;"><strong>Email de contacto:</strong> demo@tinoprop.com</p>
-                        <p><strong>Tiempo estimado de respuesta:</strong> 24-48h laborables</p>
+                        <h3>¿Por qué solicitar la demo?</h3>
+                        <p>Te mostramos la plataforma funcionando con datos reales, adaptada a tu tipo de operación. Sin compromiso, sin presión.</p>
+                        <p>La demo dura aproximadamente <strong>20 minutos</strong> y es 100% personalizada a las necesidades de tu agencia.</p>
+                        <div style="margin-top:1rem;">
+                            <div class="info_dato">📧 info@tinoprop.com</div>
+                            <div class="info_dato">⏱️ Respuesta en 24-48h laborables</div>
+                            <div class="info_dato">📍 Valencia, España</div>
+                        </div>
                     </article>
 
                     <form class="contacto_form" id="formDemo">
                         <div class="campo">
-                            <label for="nombre_demo">Nombre</label>
+                            <label for="nombre_demo">Nombre completo</label>
                             <input id="nombre_demo" name="nombre_demo" type="text" placeholder="Tu nombre" required>
                         </div>
                         <div class="campo">
-                            <label for="email_demo">Email</label>
-                            <input id="email_demo" name="email_demo" type="email" placeholder="tuemail@agencia.com" required>
+                            <label for="email_demo">Email profesional</label>
+                            <input id="email_demo" name="email_demo" type="email" placeholder="tu@agencia.com" required>
                         </div>
                         <div class="campo">
                             <label for="telefono_demo">Teléfono</label>
-                            <input id="telefono_demo" name="telefono_demo" type="text" placeholder="+34 ...">
+                            <input id="telefono_demo" name="telefono_demo" type="tel" placeholder="+34 600 000 000">
                         </div>
                         <div class="campo">
-                            <label for="mensaje_demo">Mensaje</label>
-                            <textarea id="mensaje_demo" name="mensaje_demo" rows="4" placeholder="Cuéntanos qué necesitas exactamente" required></textarea>
+                            <label for="plan_demo">Plan de interés</label>
+                            <select id="plan_demo" name="plan_demo">
+                                <option value="starter">Starter (49€/mes)</option>
+                                <option value="profesional" selected>Profesional (129€/mes)</option>
+                                <option value="agencia">Agencia (a medida)</option>
+                                <option value="no_seguro">No estoy seguro aún</option>
+                            </select>
                         </div>
-                        <button type="submit" class="btn btn-primario">Enviar solicitud</button>
+                        <div class="campo">
+                            <label for="mensaje_demo">¿Qué necesitas?</label>
+                            <textarea id="mensaje_demo" name="mensaje_demo" rows="3" placeholder="Cuéntanos sobre tu agencia y qué buscas en un CRM..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-verde">Solicitar demo gratuita →</button>
                     </form>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- ═══ FOOTER ═══ -->
     <footer>
-        <p>© 2026 TinoProp Solutions · Valencia, España · CRM inmobiliario para equipos comerciales</p>
+        <div class="contenedor">
+            <div class="footer_inner">
+                <div class="footer_logo">Tino<span>Prop</span></div>
+                <div class="footer_links">
+                    <a href="#funcionalidades">Funcionalidades</a>
+                    <a href="#modulos">Módulos</a>
+                    <a href="#precios">Precios</a>
+                    <a href="#contacto">Contacto</a>
+                </div>
+            </div>
+            <p class="footer_copy">© 2026 TinoProp · Valentín Antonio De Gennaro · Valencia, España · Todos los derechos reservados</p>
+        </div>
     </footer>
 
     <script>
-        const formDemo = document.getElementById('formDemo');
-
-        formDemo?.addEventListener('submit', (event) => {
-            event.preventDefault();
-
-            const nombre = document.getElementById('nombre_demo')?.value.trim() || '';
-            const email = document.getElementById('email_demo')?.value.trim() || '';
+        /* ── Formulario → abre mailto con datos prellenados ── */
+        document.getElementById('formDemo')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nombre   = document.getElementById('nombre_demo')?.value.trim() || '';
+            const email    = document.getElementById('email_demo')?.value.trim() || '';
             const telefono = document.getElementById('telefono_demo')?.value.trim() || 'No indicado';
-            const mensaje = document.getElementById('mensaje_demo')?.value.trim() || '';
+            const plan     = document.getElementById('plan_demo')?.value || '';
+            const mensaje  = document.getElementById('mensaje_demo')?.value.trim() || 'Sin mensaje adicional';
 
-            const subject = encodeURIComponent('Solicitud de demo TinoProp - ' + nombre);
+            const planTexto = {
+                starter: 'Starter (49€/mes)',
+                profesional: 'Profesional (129€/mes)',
+                agencia: 'Agencia (a medida)',
+                no_seguro: 'No estoy seguro aún'
+            };
+
+            const subject = encodeURIComponent('Solicitud de demo TinoProp — ' + nombre);
             const body = encodeURIComponent(
-                'Hola equipo de TinoProp,%0D%0A%0D%0A' +
-                'Quiero solicitar una demo.%0D%0A%0D%0A' +
-                'Nombre: ' + nombre + '%0D%0A' +
-                'Email: ' + email + '%0D%0A' +
-                'Teléfono: ' + telefono + '%0D%0A%0D%0A' +
-                'Mensaje:%0D%0A' + mensaje + '%0D%0A%0D%0A' +
-                'Gracias.'
+                'Hola equipo de TinoProp,\r\n\r\n' +
+                'Me gustaría solicitar una demo del CRM.\r\n\r\n' +
+                '— Datos de contacto —\r\n' +
+                'Nombre: ' + nombre + '\r\n' +
+                'Email: ' + email + '\r\n' +
+                'Teléfono: ' + telefono + '\r\n' +
+                'Plan de interés: ' + (planTexto[plan] || plan) + '\r\n\r\n' +
+                '— Mensaje —\r\n' + mensaje + '\r\n\r\n' +
+                'Quedo a la espera de vuestra respuesta.\r\nGracias.'
             );
 
-            window.location.href = 'mailto:demo@tinoprop.com?subject=' + subject + '&body=' + body;
+            window.location.href = 'mailto:info@tinoprop.com?subject=' + subject + '&body=' + body;
         });
+
+        /* ── Scroll animations (fade-up) ── */
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
     </script>
 
 </body>
