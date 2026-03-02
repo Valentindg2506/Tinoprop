@@ -1,0 +1,222 @@
+-- Archivo: database/tinoprop.sql
+-- Rol: script de inicialización de base de datos de TinoProp.
+-- Contenido: creación de BD, tablas principales, índices y datos semilla.
+
+CREATE DATABASE tinoprop
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE tinoprop;
+
+-- Tabla de usuarios del sistema (autenticación y roles).
+CREATE TABLE usuarios (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    rol VARCHAR(50) NOT NULL DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla maestra de clientes (comprador/vendedor) con datos de negocio.
+CREATE TABLE clientes (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tipo ENUM('vendedor','comprador') NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(120) NOT NULL,
+    telefono VARCHAR(30) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    operacion VARCHAR(50) NOT NULL,
+    direccion VARCHAR(200) DEFAULT NULL,
+    genero VARCHAR(50) DEFAULT NULL,
+    fecha_nacimiento DATE DEFAULT NULL,
+    presupuesto DECIMAL(12,2) DEFAULT NULL,
+    zona_interesada VARCHAR(120) DEFAULT NULL,
+    comentarios TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Pipeline comercial de prospectos para vistas kanban.
+CREATE TABLE prospectos (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tipo ENUM('vendedor','comprador') NOT NULL,
+    nombre VARCHAR(120) NOT NULL,
+    interes VARCHAR(200) NOT NULL,
+    estado VARCHAR(50) NOT NULL,
+    telefono VARCHAR(30) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Inventario interno de propiedades de venta/alquiler.
+CREATE TABLE propiedades (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    equipo ENUM('vendedor','comprador') NOT NULL,
+    titulo VARCHAR(150) NOT NULL,
+    tipo VARCHAR(80) NOT NULL,
+    ubicacion VARCHAR(120) NOT NULL,
+    direccion VARCHAR(200) DEFAULT NULL,
+    metros INT DEFAULT NULL,
+    habitaciones INT DEFAULT NULL,
+    banos INT DEFAULT NULL,
+    precio DECIMAL(12,2) NOT NULL,
+    moneda VARCHAR(10) NOT NULL DEFAULT 'EUR',
+    periodo VARCHAR(20) DEFAULT NULL,
+    operacion ENUM('venta','alquiler') NOT NULL,
+    estado VARCHAR(50) NOT NULL,
+    referencia VARCHAR(80) DEFAULT NULL,
+    descripcion TEXT DEFAULT NULL,
+    visitas INT NOT NULL DEFAULT 0,
+    ofertas INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE notas (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    entity_type ENUM('cliente','propiedad') NOT NULL,
+    entity_id INT UNSIGNED NOT NULL,
+    tipo ENUM('Nota','Aviso') NOT NULL DEFAULT 'Nota',
+    texto TEXT NOT NULL,
+    usuario_id INT UNSIGNED DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_notas_entity (entity_type, entity_id),
+    CONSTRAINT fk_notas_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON DELETE SET NULL
+);
+
+INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES
+('Administrador', 'admin@tinoprop.com', '$2y$10$HitxwSOeHIfBuRBtiwl53.b16auDL/xvFhtbCXYRkChtxa7iUEplC', 'admin');
+
+INSERT INTO clientes (tipo, nombre, apellido, telefono, email, operacion, direccion, genero, fecha_nacimiento, presupuesto, zona_interesada, comentarios)
+VALUES
+('vendedor', 'Valentin', 'De Gennaro', '666-111-222', 'valentin@email.com', 'Venta', 'Av. del Puerto, 12, Valencia', 'Masculino', '1990-05-10', 250000, 'Ruzafa', 'Cliente interesado en aticos por la zona de Ruzafa.'),
+('vendedor', 'Ana', 'Lopez', '666-333-444', 'ana.lopez@email.com', 'Venta', 'Carrer Colon, 4, Valencia', 'Femenino', '1988-11-02', 320000, 'Centro', 'Busca vender chalet familiar.'),
+('comprador', 'Carlos', 'Perez', '666-555-666', 'carlos.p@email.com', 'Compra', 'Av. Blasco Ibanez, 54, Valencia', 'Masculino', '1994-01-15', 190000, 'Campanar', 'Prefiere piso con balcon.'),
+('comprador', 'Maria', 'Garcia', '666-777-888', 'maria.g@email.com', 'Compra', 'Calle la Paz, 9, Valencia', 'Femenino', '1992-06-22', 210000, 'Ruzafa', 'Interesada en zona con servicios.');
+
+INSERT INTO prospectos (tipo, nombre, interes, estado, telefono)
+VALUES
+('vendedor', 'Laura Gomez', 'Busca atico centro', 'nuevo', '600-111-222'),
+('vendedor', 'Pedro Ruiz', 'Vende piso playa', 'contactado', '611-222-333'),
+('vendedor', 'Marta Diaz', 'Inversion local', 'no_contesta', '622-333-444'),
+('vendedor', 'Javier S.', 'Quiere vender ya', 'vender', '633-444-555'),
+('comprador', 'Sofia L.', 'Compra primera vivienda', 'comprar', '644-555-666'),
+('comprador', 'Carlos M.', 'Alquiler vacacional', 'nuevo', '655-666-777'),
+('comprador', 'Luis T.', 'Venta heredada', 'descartado', '666-777-888'),
+('comprador', 'Ana B.', 'Ya compro', 'realizado', '677-888-999');
+
+INSERT INTO propiedades (equipo, titulo, tipo, ubicacion, direccion, metros, habitaciones, banos, precio, moneda, periodo, operacion, estado, referencia, descripcion, visitas, ofertas)
+VALUES
+('vendedor', 'Apartamento Centrico', 'Piso', 'Valencia', 'Calle Colon 25', 95, 2, 1, 185000, 'EUR', NULL, 'venta', 'Disponible', 'TP-VAL-101', 'Apartamento reformado con balcon y luz natural.', 12, 3),
+('vendedor', 'Chalet con Jardin', 'Chalet', 'Torrent', 'Av. Valencia 12', 180, 4, 2, 320000, 'EUR', NULL, 'venta', 'Reservado', 'TP-TOR-202', 'Chalet familiar con jardin amplio.', 9, 1),
+('vendedor', 'Atico Luminoso', 'Atico', 'Paterna', 'Calle Mayor 7', 110, 3, 2, 245000, 'EUR', NULL, 'venta', 'Disponible', 'TP-PAT-103', 'Atico con terraza y vistas abiertas.', 12, 3),
+('comprador', 'Duplex Moderno', 'Duplex', 'Valencia', 'Calle Serreria 18', 120, 3, 2, 255000, 'EUR', NULL, 'venta', 'Disponible', 'TP-VAL-204', 'Duplex moderno con cocina abierta.', 7, 2),
+('vendedor', 'Loft Urban', 'Loft', 'Valencia', 'Calle Sueca 3', 60, 1, 1, 850, 'EUR', 'mes', 'alquiler', 'Disponible', 'TP-VAL-301', 'Loft ideal para profesionales.', 9, 1),
+('vendedor', 'Piso Familiar', 'Piso', 'Burjassot', 'Calle Valencia 40', 90, 3, 2, 1050, 'EUR', 'mes', 'alquiler', 'Reservado', 'TP-BUR-302', 'Piso amplio con garaje.', 5, 1),
+('comprador', 'Piso con Terraza', 'Piso', 'Valencia', 'Av. del Puerto 44', 85, 2, 1, 980, 'EUR', 'mes', 'alquiler', 'Disponible', 'TP-VAL-401', 'Terraza amplia y luminoso.', 6, 1),
+('comprador', 'Estudio con Luz', 'Estudio', 'Valencia', 'Calle Cuba 22', 40, 1, 1, 700, 'EUR', 'mes', 'alquiler', 'Reservado', 'TP-VAL-403', 'Estudio funcional cerca del metro.', 4, 0);
+
+INSERT INTO notas (entity_type, entity_id, tipo, texto, usuario_id)
+VALUES
+('cliente', 1, 'Aviso', 'Llamar el viernes por la tarde.', 1),
+('cliente', 1, 'Nota', 'Prefiere visitas por la manana.', 1),
+('cliente', 1, 'Aviso', 'Enviar listado de aticos nuevos.', 1),
+('propiedad', 1, 'Aviso', 'Preparar fotos nuevas antes de publicacion.', 1),
+('propiedad', 1, 'Nota', 'Cliente interesado en visita el jueves.', 1),
+('propiedad', 1, 'Aviso', 'Revisar certificado energetico.', 1);
+
+-- Pipeline de proceso para propiedades: tablero kanban con etapas de captación y venta/alquiler.
+CREATE TABLE proceso_propiedades (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    propiedad_id INT UNSIGNED NOT NULL,
+    equipo ENUM('vendedor','comprador') NOT NULL,
+    etapa VARCHAR(50) NOT NULL DEFAULT 'captacion',
+    notas TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_proceso_propiedad FOREIGN KEY (propiedad_id) REFERENCES propiedades(id)
+        ON DELETE CASCADE,
+    INDEX idx_proceso_equipo (equipo),
+    INDEX idx_proceso_etapa (etapa)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Datos semilla de proceso para las propiedades existentes
+INSERT INTO proceso_propiedades (propiedad_id, equipo, etapa, notas) VALUES
+(1, 'vendedor', 'publicada', 'Fotos listas, publicada en portales principales.'),
+(2, 'vendedor', 'visitas', 'Dos visitas agendadas esta semana.'),
+(3, 'vendedor', 'captacion', 'Pendiente de firma del mandato de venta.'),
+(4, 'comprador', 'negociacion', 'Oferta recibida, pendiente de contraoferta.'),
+(5, 'vendedor', 'publicada', 'Publicado en Idealista y Fotocasa.'),
+(6, 'vendedor', 'documentacion', 'Esperando certificado energético.'),
+(7, 'comprador', 'captacion', 'Primer contacto con propietario.'),
+(8, 'comprador', 'cerrada', 'Contrato de alquiler firmado.');
+
+-- Tabla de visitas a propiedades: sincronizada bidireccionalmente con recordatorios.
+CREATE TABLE visitas (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    equipo ENUM('vendedor','comprador') NOT NULL,
+    propiedad_id INT UNSIGNED DEFAULT NULL,
+    cliente_id INT UNSIGNED DEFAULT NULL,
+    fecha_visita DATE NOT NULL,
+    hora_visita TIME DEFAULT NULL,
+    estado ENUM('pendiente','realizada','cancelada') NOT NULL DEFAULT 'pendiente',
+    observaciones TEXT DEFAULT NULL,
+    recordatorio_id INT DEFAULT NULL,
+    usuario_id INT UNSIGNED NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_visitas_equipo (equipo),
+    INDEX idx_visitas_fecha (fecha_visita),
+    INDEX idx_visitas_estado (estado),
+    INDEX idx_visitas_recordatorio (recordatorio_id),
+    CONSTRAINT fk_visitas_propiedad FOREIGN KEY (propiedad_id) REFERENCES propiedades(id) ON DELETE SET NULL,
+    CONSTRAINT fk_visitas_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE SET NULL,
+    CONSTRAINT fk_visitas_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Datos semilla de visitas
+INSERT INTO visitas (equipo, propiedad_id, cliente_id, fecha_visita, hora_visita, estado, observaciones, usuario_id) VALUES
+('vendedor', 1, 1, CURDATE(), '10:00:00', 'pendiente', 'Primera visita al apartamento centrico con el cliente Valentin.', 1),
+('vendedor', 2, 2, CURDATE(), '12:00:00', 'pendiente', 'Mostrar chalet con jardin a Ana Lopez.', 1),
+('vendedor', 3, NULL, DATE_SUB(CURDATE(), INTERVAL 2 DAY), '16:00:00', 'realizada', 'Visita completada al atico luminoso. Cliente muy interesado.', 1),
+('comprador', 4, 3, DATE_SUB(CURDATE(), INTERVAL 1 DAY), '11:00:00', 'realizada', 'Carlos Perez visito el duplex moderno. Hara una oferta.', 1),
+('comprador', 7, 4, DATE_ADD(CURDATE(), INTERVAL 1 DAY), '17:00:00', 'pendiente', 'Maria Garcia quiere ver el piso con terraza.', 1),
+('vendedor', 1, NULL, DATE_ADD(CURDATE(), INTERVAL 3 DAY), '09:30:00', 'pendiente', 'Segunda visita programada con nuevo interesado.', 1);
+
+-- Propiedades obtenidas por scrappear de portales inmobiliarios, para pruebas y desarrollo de funcionalidades de importacion y analisis de datos.  
+CREATE TABLE scraped_propiedades (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    fuente VARCHAR(50) NOT NULL,
+    titulo VARCHAR(255) NOT NULL,
+    tipo VARCHAR(100) DEFAULT NULL,
+    operacion VARCHAR(50) DEFAULT NULL,
+    precio DECIMAL(12,2) DEFAULT NULL,
+    moneda VARCHAR(10) DEFAULT 'EUR',
+    ubicacion VARCHAR(200) DEFAULT NULL,
+    zona VARCHAR(120) DEFAULT NULL,
+    ciudad VARCHAR(80) DEFAULT NULL,
+    provincia VARCHAR(80) DEFAULT NULL,
+    direccion VARCHAR(255) DEFAULT NULL,
+    habitaciones TINYINT DEFAULT NULL,
+    banos TINYINT DEFAULT NULL,
+    metros INT DEFAULT NULL,
+    descripcion TEXT DEFAULT NULL,
+    url VARCHAR(400) NOT NULL,
+    raw_hash CHAR(64) NOT NULL,
+    scrape_run VARCHAR(80) DEFAULT NULL,
+    scraped_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_url (url),
+    KEY idx_ciudad (ciudad),
+    KEY idx_precio (precio),
+    KEY idx_zona (zona),
+    KEY idx_operacion (operacion)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO scraped_propiedades
+    (fuente, titulo, tipo, operacion, precio, moneda, ubicacion, zona, ciudad, provincia, direccion, habitaciones, banos, metros, descripcion, url, raw_hash, scrape_run, scraped_at)
+VALUES
+    ('habitaclia', 'Piso luminoso en Ruzafa', 'Piso', 'venta', 245000, 'EUR', 'Ruzafa', 'Ruzafa', 'Valencia', 'Valencia', 'Calle Sueca 12', 3, 2, 95, 'Reformado, balcon y orientacion sur.', 'https://www.habitaclia.com/piso_en_ruzafa_valencia-12345.htm', '111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000', 'seed-demo', '2024-12-10 10:00:00'),
+    ('habitaclia', 'Atico con terraza en El Carmen', 'Atico', 'venta', 310000, 'EUR', 'Ciutat Vella', 'El Carmen', 'Valencia', 'Valencia', 'Plaza del Negrito 3', 2, 2, 110, 'Terraza amplia y vistas abiertas al casco historico.', 'https://www.habitaclia.com/atico_en_el_carmen_valencia-67890.htm', 'abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd', 'seed-demo', '2024-12-10 11:00:00');
