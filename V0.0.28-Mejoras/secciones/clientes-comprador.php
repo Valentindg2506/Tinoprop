@@ -19,7 +19,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] === 'csv') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_verify($_POST['_token'] ?? '')) {
+    if (!csrf_verify()) {
         flash_set('error', 'Token de seguridad inválido. Inténtalo de nuevo.');
         header('Location: index.php?seccion=' . $origen);
         exit;
@@ -60,13 +60,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['eliminar_cliente'])) {
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
-            $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'cliente' AND entity_id = :id");
-            $stmt->execute(['id' => $id_eliminar]);
-            $stmt = $pdo->prepare('DELETE FROM clientes WHERE id = :id');
-            $stmt->execute(['id' => $id_eliminar]);
-            actividad_registrar($pdo, 'eliminar', 'cliente', $id_eliminar, 'Cliente comprador eliminado');
+            try {
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'cliente' AND entity_id = :id");
+                $stmt->execute(['id' => $id_eliminar]);
+                $stmt = $pdo->prepare('DELETE FROM clientes WHERE id = :id');
+                $stmt->execute(['id' => $id_eliminar]);
+                $pdo->commit();
+                actividad_registrar($pdo, 'eliminar', 'cliente', $id_eliminar, 'Cliente comprador eliminado');
+                flash_set('success', 'Cliente eliminado correctamente.');
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                flash_set('error', 'Error al eliminar: ' . $e->getMessage());
+            }
         }
-        flash_set('success', 'Cliente eliminado correctamente.');
     }
 
     header('Location: index.php?seccion=' . $origen);

@@ -1,0 +1,32 @@
+# === TinoProp .gitignore ===
+
+# Configuración con credenciales
+inc/config.php
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Subidas de usuarios
+uploads/
+documentos/
+
+# Entorno local
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/

@@ -19,6 +19,7 @@ $columnas_proceso = [
 ];
 
 $pdo = db();
+proceso_propiedades_asegurar_tabla($pdo);
 $origen = 'proceso-comprador';
 $mensaje_error = flash_get('error');
 $mensaje_exito = flash_get('success');

@@ -780,7 +780,7 @@ document.getElementById('formSubida').addEventListener('submit', async (event) =
     formData.append('entity_type', entityType);
     formData.append('entity_id', entityId);
 
-    const res = await fetch('api/documentacion.php?action=upload', {
+    const res = await fetch('api/documentacion.php?action=upload&_csrf_token=<?php echo csrf_token(); ?>', {
         method: 'POST',
         body: formData,
     });
@@ -1153,7 +1153,7 @@ docPreviewConfirmar.addEventListener('click', async () => {
 
     const saveRes = await fetch('api/documentacion.php?action=save_pdf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<?php echo csrf_token(); ?>' },
         body: JSON.stringify({
             entity_type: pendingEntity.entityType,
             entity_id: pendingEntity.entityId,

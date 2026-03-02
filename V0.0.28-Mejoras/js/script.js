@@ -1,5 +1,5 @@
 /*
- * Archivo: js/script.js — V0.0.27 Mejoras
+ * Archivo: js/script.js — V0.0.28 Mejoras
  * Rol: interacciones globales del frontend.
  * Incluye: favoritos de menú, modal de confirmación, drag&drop de kanban,
  *          orden de widgets del dashboard, sidebar colapsable, buscador global,
@@ -26,6 +26,12 @@
 
 let favoritos = [];
 const STORAGE_KEY_FAVORITOS = 'tinoprop.menu.favoritos';
+
+/* Helper global: obtiene el token CSRF desde el meta tag para peticiones fetch */
+function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
 
 function normalizarFavorito(item) {
     // Soporta formato legado (string) y formato nuevo ({ nombre, url }).
@@ -146,6 +152,18 @@ function actualizar_menu() {
     let lista = document.getElementById("lista_favoritos_menu");
     lista.innerHTML = "";
 
+    /* Mapa de iconos por nombre de sección para favoritos */
+    const iconoMap = {
+        'Dashboard': '📊', 'Agenda': '📅', 'Recordatorios': '⏰',
+        'Matching': '🔗', 'Documentación': '📖', 'Clientes Vend.': '👥',
+        'Prospectos Vend.': '🎯', 'Clientes Comp.': '👥', 'Prospectos Comp.': '🎯',
+        'Propiedades': '🏠', 'Alquileres': '🔑', 'Búsqueda Avanzada': '🔎',
+        'Proceso Vendedor': '📋', 'Proceso Comprador': '📋',
+        'Visitas Vendedor': '🚶', 'Visitas Comprador': '🚶',
+        'Ofertas Vendedor': '💰', 'Post-Venta': '🏡',
+        'Importar CSV': '📥', 'Historial': '📜', 'Configuración': '⚙️',
+    };
+
     if (favoritos.length === 0) {
         lista.innerHTML = '<li class="texto_vacio">Marca una estrella...</li>';
     } else {
@@ -153,10 +171,11 @@ function actualizar_menu() {
             const nombreSeguro = (fav.nombre || '').replace(/'/g, "\\'");
             const urlSeguro = (fav.url || '').replace(/'/g, "\\'");
             const destino = fav.url || '#';
+            const icono = iconoMap[fav.nombre] || '⭐';
 
             lista.innerHTML += `
                 <li>
-                    <a href="${destino}">${fav.nombre}</a>
+                    <a href="${destino}" data-tooltip="${fav.nombre}"><span class="menu_icono">${icono}</span> <span class="sidebar_titulo">${fav.nombre}</span></a>
                     <span class="btn_eliminar" onclick="toggle_favorito('${nombreSeguro}', '${urlSeguro}')">✖</span>
                 </li>
             `;
@@ -331,7 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': getCsrfToken()
             },
             body: body.toString()
         });
@@ -480,7 +500,8 @@ document.addEventListener('DOMContentLoaded', () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': getCsrfToken()
             },
             body: body.toString()
         });
@@ -499,7 +520,8 @@ document.addEventListener('DOMContentLoaded', () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': getCsrfToken()
             },
             body: body.toString()
         });
@@ -894,12 +916,14 @@ function initBuscadorGlobal() {
                     return;
                 }
 
+                const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
                 contenedor.innerHTML = datos.map(r => `
-                    <a href="${r.url}" class="resultado_item">
-                        <span class="resultado_icono">${r.icono}</span>
+                    <a href="${esc(r.url)}" class="resultado_item">
+                        <span class="resultado_icono">${esc(r.icono)}</span>
                         <div class="resultado_info">
-                            <div class="resultado_titulo">${r.titulo}</div>
-                            <div class="resultado_detalle">${r.detalle || ''}</div>
+                            <div class="resultado_titulo">${esc(r.titulo)}</div>
+                            <div class="resultado_detalle">${esc(r.detalle || '')}</div>
                         </div>
                     </a>
                 `).join('');

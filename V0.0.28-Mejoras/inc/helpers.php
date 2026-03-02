@@ -1068,6 +1068,18 @@ function csrf_verify(): bool
     return hash_equals($_SESSION['_csrf_token'], $token);
 }
 
+/* Verifica CSRF desde APIs (header X-CSRF-Token, JSON body o POST). */
+function csrf_verify_api(): bool
+{
+    $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!$token) {
+        $json = json_decode(file_get_contents('php://input'), true);
+        $token = $json['_csrf_token'] ?? $_POST['_csrf_token'] ?? $_GET['_csrf_token'] ?? '';
+    }
+    if (empty($token) || empty($_SESSION['_csrf_token'])) return false;
+    return hash_equals($_SESSION['_csrf_token'], $token);
+}
+
 
 /* =============================================
    8. HISTORIAL DE ACTIVIDAD
@@ -1159,8 +1171,8 @@ function notificaciones_generar(PDO $pdo): array
     } catch (PDOException $e) {}
 
     try {
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM prospectos WHERE estado = "nuevo" AND created_at < DATE_SUB(NOW(), INTERVAL 14 DAY)');
-        $stmt->execute();
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM prospectos WHERE estado = "nuevo" AND created_at < DATE_SUB(NOW(), INTERVAL 14 DAY) AND usuario_id = :uid');
+        $stmt->execute(['uid' => $uid]);
         $n = (int) $stmt->fetchColumn();
         if ($n > 0) $notifs[] = ['tipo' => 'aviso', 'icono' => '👤', 'texto' => "{$n} prospecto(s) sin contactar hace +2 semanas", 'enlace' => '?seccion=prospectos-vendedor'];
     } catch (PDOException $e) {}
@@ -1248,6 +1260,9 @@ function generar_breadcrumbs(string $seccion): array
         'visitas-vendedor'      => [['titulo' => 'Vendedor'], ['titulo' => 'Visitas']],
         'visitas-comprador'     => [['titulo' => 'Comprador'], ['titulo' => 'Visitas']],
         'ofertas-vendedor'      => [['titulo' => 'Vendedor'], ['titulo' => 'Ofertas']],
+        'matching'              => [['titulo' => 'Matching']],
+        'post-venta'            => [['titulo' => 'Post-Venta']],
+        'importar-csv'          => [['titulo' => 'Sistema'], ['titulo' => 'Importar CSV']],
         'ver_propiedad'         => [['titulo' => 'Propiedades'], ['titulo' => 'Detalle']],
         'ver_cliente'           => [['titulo' => 'Clientes'], ['titulo' => 'Detalle']],
         'actividad'             => [['titulo' => 'Sistema'], ['titulo' => 'Historial']],
@@ -1374,3 +1389,488 @@ function busqueda_global(PDO $pdo, string $termino, int $limite = 10): array
 
     return $resultados;
 }
+
+
+/* =============================================
+   15. EDITAR Y ELIMINAR NOTAS
+   ============================================= */
+
+function nota_actualizar(PDO $pdo, int $id, string $texto, string $tipo): bool
+{
+    $stmt = $pdo->prepare('UPDATE notas SET texto = :texto, tipo = :tipo WHERE id = :id');
+    $stmt->execute(['texto' => $texto, 'tipo' => $tipo, 'id' => $id]);
+    return $stmt->rowCount() > 0;
+}
+
+function nota_eliminar(PDO $pdo, int $id): bool
+{
+    $stmt = $pdo->prepare('DELETE FROM notas WHERE id = :id');
+    $stmt->execute(['id' => $id]);
+    return $stmt->rowCount() > 0;
+}
+
+
+/* =============================================
+   16. SISTEMA DE ETIQUETAS/TAGS
+   ============================================= */
+
+function etiquetas_asegurar_tabla(PDO $pdo): void
+{
+    static $ok = false;
+    if ($ok) return;
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS etiquetas (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            nombre VARCHAR(50) NOT NULL,
+            color VARCHAR(20) NOT NULL DEFAULT "#3b82f6",
+            usuario_id INT UNSIGNED NOT NULL,
+            UNIQUE KEY uniq_nombre_usr (nombre, usuario_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS entidad_etiquetas (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            entidad_tipo VARCHAR(30) NOT NULL,
+            entidad_id INT UNSIGNED NOT NULL,
+            etiqueta_id INT UNSIGNED NOT NULL,
+            UNIQUE KEY uniq_ent_tag (entidad_tipo, entidad_id, etiqueta_id),
+            INDEX idx_entidad (entidad_tipo, entidad_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+    $ok = true;
+}
+
+function etiqueta_crear(PDO $pdo, string $nombre, string $color): ?int
+{
+    $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
+    if ($uid <= 0) return null;
+    etiquetas_asegurar_tabla($pdo);
+    try {
+        $stmt = $pdo->prepare('INSERT INTO etiquetas (nombre, color, usuario_id) VALUES (:nombre, :color, :uid)');
+        $stmt->execute(['nombre' => $nombre, 'color' => $color, 'uid' => $uid]);
+        return (int) $pdo->lastInsertId();
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+function etiquetas_listar(PDO $pdo): array
+{
+    $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
+    if ($uid <= 0) return [];
+    etiquetas_asegurar_tabla($pdo);
+    $stmt = $pdo->prepare('SELECT * FROM etiquetas WHERE usuario_id = :uid ORDER BY nombre');
+    $stmt->execute(['uid' => $uid]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
+
+function etiqueta_eliminar(PDO $pdo, int $id): bool
+{
+    $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
+    etiquetas_asegurar_tabla($pdo);
+    $pdo->prepare('DELETE FROM entidad_etiquetas WHERE etiqueta_id = :id')->execute(['id' => $id]);
+    $stmt = $pdo->prepare('DELETE FROM etiquetas WHERE id = :id AND usuario_id = :uid');
+    $stmt->execute(['id' => $id, 'uid' => $uid]);
+    return $stmt->rowCount() > 0;
+}
+
+function entidad_asignar_etiqueta(PDO $pdo, string $tipo, int $entidad_id, int $etiqueta_id): bool
+{
+    etiquetas_asegurar_tabla($pdo);
+    try {
+        $stmt = $pdo->prepare('INSERT INTO entidad_etiquetas (entidad_tipo, entidad_id, etiqueta_id) VALUES (:tipo, :eid, :tid)');
+        $stmt->execute(['tipo' => $tipo, 'eid' => $entidad_id, 'tid' => $etiqueta_id]);
+        return true;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+function entidad_quitar_etiqueta(PDO $pdo, string $tipo, int $entidad_id, int $etiqueta_id): bool
+{
+    etiquetas_asegurar_tabla($pdo);
+    $stmt = $pdo->prepare('DELETE FROM entidad_etiquetas WHERE entidad_tipo = :tipo AND entidad_id = :eid AND etiqueta_id = :tid');
+    $stmt->execute(['tipo' => $tipo, 'eid' => $entidad_id, 'tid' => $etiqueta_id]);
+    return $stmt->rowCount() > 0;
+}
+
+function entidad_obtener_etiquetas(PDO $pdo, string $tipo, int $entidad_id): array
+{
+    etiquetas_asegurar_tabla($pdo);
+    $stmt = $pdo->prepare(
+        'SELECT e.* FROM etiquetas e
+         INNER JOIN entidad_etiquetas ee ON e.id = ee.etiqueta_id
+         WHERE ee.entidad_tipo = :tipo AND ee.entidad_id = :eid
+         ORDER BY e.nombre'
+    );
+    $stmt->execute(['tipo' => $tipo, 'eid' => $entidad_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
+
+
+/* =============================================
+   17. DUPLICAR PROPIEDAD
+   ============================================= */
+
+function propiedad_duplicar(PDO $pdo, int $id): ?int
+{
+    $stmt = $pdo->prepare('SELECT * FROM propiedades WHERE id = :id');
+    $stmt->execute(['id' => $id]);
+    $prop = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$prop) return null;
+
+    unset($prop['id'], $prop['created_at'], $prop['updated_at']);
+    $prop['titulo'] = $prop['titulo'] . ' (copia)';
+    $prop['referencia'] = $prop['referencia'] ? $prop['referencia'] . '-COPIA' : '';
+    $prop['estado'] = 'Disponible';
+
+    $cols = implode(', ', array_keys($prop));
+    $placeholders = ':' . implode(', :', array_keys($prop));
+    $stmt = $pdo->prepare("INSERT INTO propiedades ($cols) VALUES ($placeholders)");
+    $stmt->execute($prop);
+    return (int) $pdo->lastInsertId();
+}
+
+
+/* =============================================
+   18. IMPORTACIÓN MASIVA CSV
+   ============================================= */
+
+function importar_csv_clientes(PDO $pdo, string $filepath, string $tipo): array
+{
+    $resultado = ['importados' => 0, 'errores' => [], 'lineas_error' => []];
+    $handle = fopen($filepath, 'r');
+    if (!$handle) {
+        $resultado['errores'][] = 'No se pudo abrir el archivo.';
+        return $resultado;
+    }
+
+    // Detectar BOM UTF-8
+    $bom = fread($handle, 3);
+    if ($bom !== "\xEF\xBB\xBF") rewind($handle);
+
+    $cabeceras = fgetcsv($handle, 0, ';');
+    if (!$cabeceras) {
+        $resultado['errores'][] = 'No se pudieron leer las cabeceras.';
+        fclose($handle);
+        return $resultado;
+    }
+    $cabeceras = array_map('strtolower', array_map('trim', $cabeceras));
+
+    $campos_requeridos = ['nombre', 'apellido'];
+    foreach ($campos_requeridos as $campo) {
+        if (!in_array($campo, $cabeceras)) {
+            $resultado['errores'][] = "Falta columna obligatoria: $campo";
+            fclose($handle);
+            return $resultado;
+        }
+    }
+
+    $linea = 1;
+    $stmt = $pdo->prepare(
+        'INSERT INTO clientes (tipo, nombre, apellido, telefono, email, operacion, direccion, zona_interesada, presupuesto, comentarios)
+         VALUES (:tipo, :nombre, :apellido, :telefono, :email, :operacion, :direccion, :zona, :presupuesto, :comentarios)'
+    );
+
+    while (($fila = fgetcsv($handle, 0, ';')) !== false) {
+        $linea++;
+        if (count($fila) < count($cabeceras)) {
+            $resultado['lineas_error'][] = $linea;
+            continue;
+        }
+        $datos = array_combine($cabeceras, $fila);
+        $nombre = trim($datos['nombre'] ?? '');
+        $apellido = trim($datos['apellido'] ?? '');
+        if (!$nombre || !$apellido) {
+            $resultado['lineas_error'][] = $linea;
+            continue;
+        }
+        try {
+            $stmt->execute([
+                'tipo' => $tipo,
+                'nombre' => $nombre,
+                'apellido' => $apellido,
+                'telefono' => trim($datos['telefono'] ?? ''),
+                'email' => trim($datos['email'] ?? ''),
+                'operacion' => trim($datos['operacion'] ?? 'Venta'),
+                'direccion' => trim($datos['direccion'] ?? ''),
+                'zona' => trim($datos['zona_interesada'] ?? $datos['zona'] ?? ''),
+                'presupuesto' => is_numeric($datos['presupuesto'] ?? '') ? (float)$datos['presupuesto'] : null,
+                'comentarios' => trim($datos['comentarios'] ?? ''),
+            ]);
+            $resultado['importados']++;
+        } catch (PDOException $e) {
+            $resultado['lineas_error'][] = $linea;
+        }
+    }
+    fclose($handle);
+    return $resultado;
+}
+
+function importar_csv_propiedades(PDO $pdo, string $filepath, string $equipo): array
+{
+    $resultado = ['importados' => 0, 'errores' => [], 'lineas_error' => []];
+    $handle = fopen($filepath, 'r');
+    if (!$handle) {
+        $resultado['errores'][] = 'No se pudo abrir el archivo.';
+        return $resultado;
+    }
+
+    $bom = fread($handle, 3);
+    if ($bom !== "\xEF\xBB\xBF") rewind($handle);
+
+    $cabeceras = fgetcsv($handle, 0, ';');
+    if (!$cabeceras) {
+        $resultado['errores'][] = 'No se pudieron leer las cabeceras.';
+        fclose($handle);
+        return $resultado;
+    }
+    $cabeceras = array_map('strtolower', array_map('trim', $cabeceras));
+
+    if (!in_array('titulo', $cabeceras)) {
+        $resultado['errores'][] = 'Falta columna obligatoria: titulo';
+        fclose($handle);
+        return $resultado;
+    }
+
+    $linea = 1;
+    $stmt = $pdo->prepare(
+        'INSERT INTO propiedades (equipo, titulo, tipo, ubicacion, direccion, metros, habitaciones, banos, precio, moneda, operacion, estado, referencia, descripcion)
+         VALUES (:equipo, :titulo, :tipo, :ubicacion, :direccion, :metros, :hab, :banos, :precio, :moneda, :operacion, :estado, :ref, :desc)'
+    );
+
+    while (($fila = fgetcsv($handle, 0, ';')) !== false) {
+        $linea++;
+        if (count($fila) < count($cabeceras)) {
+            $resultado['lineas_error'][] = $linea;
+            continue;
+        }
+        $datos = array_combine($cabeceras, $fila);
+        $titulo = trim($datos['titulo'] ?? '');
+        if (!$titulo) {
+            $resultado['lineas_error'][] = $linea;
+            continue;
+        }
+        try {
+            $stmt->execute([
+                'equipo' => $equipo,
+                'titulo' => $titulo,
+                'tipo' => trim($datos['tipo'] ?? 'Piso'),
+                'ubicacion' => trim($datos['ubicacion'] ?? ''),
+                'direccion' => trim($datos['direccion'] ?? ''),
+                'metros' => is_numeric($datos['metros'] ?? '') ? (int)$datos['metros'] : null,
+                'hab' => is_numeric($datos['habitaciones'] ?? '') ? (int)$datos['habitaciones'] : null,
+                'banos' => is_numeric($datos['banos'] ?? $datos['baños'] ?? '') ? (int)($datos['banos'] ?? $datos['baños'] ?? 0) : null,
+                'precio' => is_numeric($datos['precio'] ?? '') ? (float)$datos['precio'] : 0,
+                'moneda' => trim($datos['moneda'] ?? 'EUR'),
+                'operacion' => strtolower(trim($datos['operacion'] ?? 'venta')),
+                'estado' => trim($datos['estado'] ?? 'Disponible'),
+                'ref' => trim($datos['referencia'] ?? ''),
+                'desc' => trim($datos['descripcion'] ?? ''),
+            ]);
+            $resultado['importados']++;
+        } catch (PDOException $e) {
+            $resultado['lineas_error'][] = $linea;
+        }
+    }
+    fclose($handle);
+    return $resultado;
+}
+
+
+/* =============================================
+   19. FILTROS GUARDADOS
+   ============================================= */
+
+function filtros_asegurar_tabla(PDO $pdo): void
+{
+    static $ok = false;
+    if ($ok) return;
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS filtros_guardados (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            usuario_id INT UNSIGNED NOT NULL,
+            nombre VARCHAR(100) NOT NULL,
+            seccion VARCHAR(50) NOT NULL,
+            parametros JSON NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_filtro_usr (usuario_id, seccion)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+    $ok = true;
+}
+
+function filtro_guardar(PDO $pdo, string $nombre, string $seccion, array $parametros): ?int
+{
+    $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
+    if ($uid <= 0) return null;
+    filtros_asegurar_tabla($pdo);
+    $stmt = $pdo->prepare('INSERT INTO filtros_guardados (usuario_id, nombre, seccion, parametros) VALUES (:uid, :nombre, :seccion, :params)');
+    $stmt->execute(['uid' => $uid, 'nombre' => $nombre, 'seccion' => $seccion, 'params' => json_encode($parametros)]);
+    return (int) $pdo->lastInsertId();
+}
+
+function filtros_listar(PDO $pdo, string $seccion): array
+{
+    $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
+    if ($uid <= 0) return [];
+    filtros_asegurar_tabla($pdo);
+    $stmt = $pdo->prepare('SELECT * FROM filtros_guardados WHERE usuario_id = :uid AND seccion = :seccion ORDER BY nombre');
+    $stmt->execute(['uid' => $uid, 'seccion' => $seccion]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
+
+function filtro_eliminar(PDO $pdo, int $id): bool
+{
+    $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
+    filtros_asegurar_tabla($pdo);
+    $stmt = $pdo->prepare('DELETE FROM filtros_guardados WHERE id = :id AND usuario_id = :uid');
+    $stmt->execute(['id' => $id, 'uid' => $uid]);
+    return $stmt->rowCount() > 0;
+}
+
+
+/* =============================================
+   20. MATCHING AUTOMÁTICO COMPRADOR-PROPIEDAD
+   ============================================= */
+
+function matching_buscar(PDO $pdo, int $limite = 20): array
+{
+    $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
+    if ($uid <= 0) return [];
+
+    $compradores = $pdo->query(
+        "SELECT id, nombre, apellido, zona_interesada, presupuesto, operacion
+         FROM clientes WHERE tipo = 'comprador' AND zona_interesada IS NOT NULL AND zona_interesada != ''
+         ORDER BY id DESC LIMIT 50"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $matches = [];
+    foreach ($compradores as $comp) {
+        $sql = "SELECT id, titulo, ubicacion, precio, moneda, operacion, estado, metros, habitaciones
+                FROM propiedades WHERE estado = 'Disponible'";
+        $params = [];
+
+        if ($comp['zona_interesada']) {
+            $sql .= ' AND (ubicacion LIKE :zona OR direccion LIKE :zona2)';
+            $params['zona'] = '%' . $comp['zona_interesada'] . '%';
+            $params['zona2'] = '%' . $comp['zona_interesada'] . '%';
+        }
+        if ($comp['presupuesto'] && $comp['presupuesto'] > 0) {
+            $sql .= ' AND precio <= :max_precio';
+            $params['max_precio'] = $comp['presupuesto'] * 1.15; // 15% tolerancia
+        }
+
+        $sql .= ' ORDER BY precio ASC LIMIT 5';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $props = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($props)) {
+            $matches[] = [
+                'comprador' => $comp,
+                'propiedades' => $props,
+                'coincidencias' => count($props),
+            ];
+        }
+    }
+
+    usort($matches, fn($a, $b) => $b['coincidencias'] <=> $a['coincidencias']);
+    return array_slice($matches, 0, $limite);
+}
+
+
+/* =============================================
+   21. TIMELINE DE ACTIVIDAD POR ENTIDAD
+   ============================================= */
+
+function timeline_entidad(PDO $pdo, string $entidad_tipo, int $entidad_id): array
+{
+    $timeline = [];
+
+    // Notas
+    $stmt = $pdo->prepare(
+        "SELECT 'nota' AS origen, tipo AS subtipo, texto AS descripcion, created_at
+         FROM notas WHERE entity_type = :tipo AND entity_id = :id ORDER BY created_at DESC"
+    );
+    $stmt->execute(['tipo' => $entidad_tipo, 'id' => $entidad_id]);
+    $timeline = array_merge($timeline, $stmt->fetchAll(PDO::FETCH_ASSOC));
+
+    // Actividad log
+    actividad_asegurar_tabla($pdo);
+    $stmt = $pdo->prepare(
+        "SELECT 'actividad' AS origen, accion AS subtipo, descripcion, created_at
+         FROM actividad_log WHERE entidad = :tipo AND entidad_id = :id ORDER BY created_at DESC"
+    );
+    $stmt->execute(['tipo' => $entidad_tipo, 'id' => $entidad_id]);
+    $timeline = array_merge($timeline, $stmt->fetchAll(PDO::FETCH_ASSOC));
+
+    // Visitas (solo para clientes o propiedades)
+    if ($entidad_tipo === 'cliente') {
+        visitas_asegurar_tabla($pdo);
+        $stmt = $pdo->prepare(
+            "SELECT 'visita' AS origen, estado AS subtipo, observaciones AS descripcion, fecha_visita AS created_at
+             FROM visitas WHERE cliente_id = :id ORDER BY fecha_visita DESC"
+        );
+        $stmt->execute(['id' => $entidad_id]);
+        $timeline = array_merge($timeline, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    if ($entidad_tipo === 'propiedad') {
+        visitas_asegurar_tabla($pdo);
+        $stmt = $pdo->prepare(
+            "SELECT 'visita' AS origen, estado AS subtipo, observaciones AS descripcion, fecha_visita AS created_at
+             FROM visitas WHERE propiedad_id = :id ORDER BY fecha_visita DESC"
+        );
+        $stmt->execute(['id' => $entidad_id]);
+        $timeline = array_merge($timeline, $stmt->fetchAll(PDO::FETCH_ASSOC));
+
+        ofertas_asegurar_tabla($pdo);
+        $stmt = $pdo->prepare(
+            "SELECT 'oferta' AS origen, estado AS subtipo, CONCAT('Oferta: ', FORMAT(importe, 0)) AS descripcion, fecha_oferta AS created_at
+             FROM ofertas WHERE propiedad_id = :id ORDER BY fecha_oferta DESC"
+        );
+        $stmt->execute(['id' => $entidad_id]);
+        $timeline = array_merge($timeline, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    // Ordenar cronológicamente (más reciente primero)
+    usort($timeline, fn($a, $b) => strtotime($b['created_at']) <=> strtotime($a['created_at']));
+    return $timeline;
+}
+
+/* =============================================
+   22. PROCESO PROPIEDADES – ASEGURAR TABLA
+   ============================================= */
+
+function proceso_propiedades_asegurar_tabla(PDO $pdo): void
+{
+    static $ok = false;
+    if ($ok) return;
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS proceso_propiedades (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            propiedad_id INT UNSIGNED NOT NULL,
+            usuario_id INT UNSIGNED NOT NULL DEFAULT 0,
+            equipo ENUM("vendedor","comprador") NOT NULL,
+            etapa VARCHAR(50) NOT NULL DEFAULT "captacion",
+            notas TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_proceso_propiedad (propiedad_id),
+            INDEX idx_proceso_equipo (equipo),
+            INDEX idx_proceso_usuario (usuario_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+
+    /* Migración: añadir usuario_id si la tabla ya existía sin ella */
+    try {
+        $pdo->exec('ALTER TABLE proceso_propiedades ADD COLUMN usuario_id INT UNSIGNED NOT NULL DEFAULT 0 AFTER propiedad_id');
+    } catch (\PDOException $e) {
+        /* columna ya existe – ignorar */
+    }
+
+    $ok = true;
+}
+
+/* FIN de helpers.php */

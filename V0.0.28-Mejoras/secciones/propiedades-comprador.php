@@ -77,13 +77,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Elimina notas asociadas y después la propiedad.
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
-            $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'propiedad' AND entity_id = :id");
-            $stmt->execute(['id' => $id_eliminar]);
+            try {
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'propiedad' AND entity_id = :id");
+                $stmt->execute(['id' => $id_eliminar]);
 
-            $stmt = $pdo->prepare('DELETE FROM propiedades WHERE id = :id');
-            $stmt->execute(['id' => $id_eliminar]);
+                $stmt = $pdo->prepare('DELETE FROM propiedades WHERE id = :id');
+                $stmt->execute(['id' => $id_eliminar]);
+                $pdo->commit();
+                flash_set('success', 'Propiedad eliminada correctamente.');
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                flash_set('error', 'Error al eliminar: ' . $e->getMessage());
+            }
         }
-        flash_set('success', 'Propiedad eliminada correctamente.');
     }
 
     header('Location: index.php?seccion=' . $origen);

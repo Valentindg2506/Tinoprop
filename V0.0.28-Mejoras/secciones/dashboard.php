@@ -198,13 +198,55 @@ $stmt->execute($params_res);
 $propiedades_reservadas = (int) $stmt->fetchColumn();
 
 // Estructura final de KPIs con iconos descriptivos.
+// Calcular periodo anterior para comparación
+$desde_anterior = null;
+if ($filtro_periodo === 'Mes actual') {
+    $desde_anterior = date('Y-m-01', strtotime('-1 month'));
+    $hasta_anterior = date('Y-m-t', strtotime('-1 month'));
+} elseif ($filtro_periodo === 'Ultimos 90 dias') {
+    $desde_anterior = date('Y-m-d', strtotime('-180 days'));
+    $hasta_anterior = date('Y-m-d', strtotime('-91 days'));
+} elseif ($filtro_periodo === 'Ano') {
+    $desde_anterior = date('Y-01-01', strtotime('-1 year'));
+    $hasta_anterior = date('Y-12-31', strtotime('-1 year'));
+}
+
+// KPIs periodo anterior
+$prev_clientes = 0; $prev_prospectos = 0; $prev_venta = 0; $prev_alquiler = 0;
+if ($desde_anterior) {
+    $cond_prev = ' AND created_at >= :desde_ant AND created_at <= :hasta_ant';
+    $p_ant = [];
+    if ($equipo_db) $p_ant['equipo'] = $equipo_db;
+    $p_ant['desde_ant'] = $desde_anterior;
+    $p_ant['hasta_ant'] = $hasta_anterior;
+
+    $st = $pdo->prepare('SELECT COUNT(*) FROM clientes WHERE 1=1' . $condicion_equipo_clientes . $cond_prev);
+    $st->execute($p_ant); $prev_clientes = (int) $st->fetchColumn();
+
+    $st = $pdo->prepare('SELECT COUNT(*) FROM prospectos WHERE 1=1' . $condicion_equipo_clientes . $cond_prev);
+    $st->execute($p_ant); $prev_prospectos = (int) $st->fetchColumn();
+
+    $p_ant2 = $p_ant; $p_ant2['operacion'] = 'venta';
+    $st = $pdo->prepare('SELECT COUNT(*) FROM propiedades WHERE operacion = :operacion' . $condicion_equipo_prop . $cond_prev);
+    $st->execute($p_ant2); $prev_venta = (int) $st->fetchColumn();
+
+    $p_ant2['operacion'] = 'alquiler';
+    $st->execute($p_ant2); $prev_alquiler = (int) $st->fetchColumn();
+}
+
+// Calcular % cambio
+$calc_cambio = function(int $actual, int $anterior): ?int {
+    if ($anterior === 0) return $actual > 0 ? 100 : null;
+    return (int) round((($actual - $anterior) / $anterior) * 100);
+};
+
 $kpis = [
-    ["titulo" => "Clientes activos", "valor" => (string) $clientes_activos, "detalle" => "Filtro: " . $filtro_equipo, "icono" => "👥"],
-    ["titulo" => "Prospectos", "valor" => (string) $prospectos_total, "detalle" => "Periodo: " . $filtro_periodo, "icono" => "📊"],
-    ["titulo" => "Prop. venta", "valor" => (string) $propiedades_venta, "detalle" => "Operacion: Venta", "icono" => "🏠"],
-    ["titulo" => "Prop. alquiler", "valor" => (string) $propiedades_alquiler, "detalle" => "Operacion: Alquiler", "icono" => "🔑"],
-    ["titulo" => "Visitas hoy", "valor" => (string) $visitas_pendientes_hoy, "detalle" => "Pendientes para hoy", "icono" => "📋"],
-    ["titulo" => "Reservadas", "valor" => (string) $propiedades_reservadas, "detalle" => "En proceso de cierre", "icono" => "🔒"],
+    ["titulo" => "Clientes activos", "valor" => (string) $clientes_activos, "detalle" => "Filtro: " . $filtro_equipo, "icono" => "👥", "cambio" => $calc_cambio($clientes_activos, $prev_clientes)],
+    ["titulo" => "Prospectos", "valor" => (string) $prospectos_total, "detalle" => "Periodo: " . $filtro_periodo, "icono" => "📊", "cambio" => $calc_cambio($prospectos_total, $prev_prospectos)],
+    ["titulo" => "Prop. venta", "valor" => (string) $propiedades_venta, "detalle" => "Operacion: Venta", "icono" => "🏠", "cambio" => $calc_cambio($propiedades_venta, $prev_venta)],
+    ["titulo" => "Prop. alquiler", "valor" => (string) $propiedades_alquiler, "detalle" => "Operacion: Alquiler", "icono" => "🔑", "cambio" => $calc_cambio($propiedades_alquiler, $prev_alquiler)],
+    ["titulo" => "Visitas hoy", "valor" => (string) $visitas_pendientes_hoy, "detalle" => "Pendientes para hoy", "icono" => "📋", "cambio" => null],
+    ["titulo" => "Reservadas", "valor" => (string) $propiedades_reservadas, "detalle" => "En proceso de cierre", "icono" => "🔒", "cambio" => null],
 ];
 
 $stmt = $pdo->prepare(
@@ -214,8 +256,8 @@ $stmt->execute($params);
 $prospectos_por_estado = $stmt->fetchAll();
 
 $mapa_estados = [
-    'Contacto'    => ['nuevo', 'contactado', 'no_contesta'],
-    'Seguimiento' => ['vender', 'comprar'],
+    'Nuevo'       => ['nuevo'],
+    'Contacto'    => ['contactado', 'no_contesta'],
     'Cerrado'     => ['realizado'],
     'Descartado'  => ['descartado'],
 ];
@@ -233,8 +275,8 @@ if ($total_embudo === 0) {
 
 $embudo = [];
 $colores = [
-    'Contacto'    => '#3498db',
-    'Seguimiento' => '#f39c12',
+    'Nuevo'       => '#3498db',
+    'Contacto'    => '#f39c12',
     'Cerrado'     => '#2ecc71',
     'Descartado'  => '#e74c3c',
 ];
@@ -280,18 +322,23 @@ $stmt = $pdo->query(
 );
 $actividad = $stmt->fetchAll();
 
-// Panel de propiedades destacadas (top por visitas).
-$query_destacadas = 'SELECT id, titulo, visitas, ofertas, operacion, equipo, precio, moneda, periodo, estado FROM propiedades WHERE 1=1';
+// Panel de propiedades destacadas (top por visitas reales).
+visitas_asegurar_tabla($pdo);
+ofertas_asegurar_tabla($pdo);
+$query_destacadas = 'SELECT p.id, p.titulo, p.operacion, p.equipo, p.precio, p.moneda, p.periodo, p.estado,
+    (SELECT COUNT(*) FROM visitas v WHERE v.propiedad_id = p.id) AS visitas_real,
+    (SELECT COUNT(*) FROM ofertas o WHERE o.propiedad_id = p.id) AS ofertas_real
+    FROM propiedades p WHERE 1=1';
 $params_destacadas = [];
 if ($operacion_db) {
-    $query_destacadas .= ' AND operacion = :operacion';
+    $query_destacadas .= ' AND p.operacion = :operacion';
     $params_destacadas['operacion'] = $operacion_db;
 }
 if ($equipo_db) {
-    $query_destacadas .= ' AND equipo = :equipo';
+    $query_destacadas .= ' AND p.equipo = :equipo';
     $params_destacadas['equipo'] = $equipo_db;
 }
-$query_destacadas .= ' ORDER BY visitas DESC LIMIT 3';
+$query_destacadas .= ' ORDER BY visitas_real DESC LIMIT 3';
 $stmt = $pdo->prepare($query_destacadas);
 $stmt->execute($params_destacadas);
 $destacadas = $stmt->fetchAll();
@@ -387,6 +434,11 @@ $orden_panels_guardado = preferencias_usuario_get($pdo, 'dashboard.panels.order'
                 <span class="kpi_title"><?php echo e($kpi['titulo']); ?></span>
             </div>
             <strong class="kpi_value"><?php echo e($kpi['valor']); ?></strong>
+            <?php if (isset($kpi['cambio']) && $kpi['cambio'] !== null): ?>
+                <span class="kpi_cambio kpi_cambio--<?php echo $kpi['cambio'] >= 0 ? 'up' : 'down'; ?>">
+                    <?php echo $kpi['cambio'] >= 0 ? '▲' : '▼'; ?> <?php echo abs($kpi['cambio']); ?>% vs anterior
+                </span>
+            <?php endif; ?>
             <span class="kpi_detail"><?php echo e($kpi['detalle']); ?></span>
         </div>
     <?php endforeach; ?>
@@ -406,44 +458,81 @@ $embudo_labels = array_map(fn($e) => $e['etapa'], $embudo);
 $embudo_valores = array_map(fn($e) => $e['valor'], $embudo);
 $embudo_colores = array_map(fn($e) => $e['color'], $embudo);
 
-// Visitas por estado
-$stmt_vis_chart = $pdo->prepare('SELECT estado, COUNT(*) AS total FROM visitas WHERE usuario_id = :uid GROUP BY estado');
-$stmt_vis_chart->execute(['uid' => $usuario_id]);
+// Visitas por estado (respeta filtros del dashboard)
+$sql_vis_chart = 'SELECT estado, COUNT(*) AS total FROM visitas WHERE usuario_id = :uid';
+$p_vis = ['uid' => $usuario_id];
+if ($equipo_db) { $sql_vis_chart .= ' AND equipo = :equipo'; $p_vis['equipo'] = $equipo_db; }
+if ($desde) { $sql_vis_chart .= ' AND fecha_visita >= :desde'; $p_vis['desde'] = $desde; }
+$sql_vis_chart .= ' GROUP BY estado';
+$stmt_vis_chart = $pdo->prepare($sql_vis_chart);
+$stmt_vis_chart->execute($p_vis);
 $visitas_chart = $stmt_vis_chart->fetchAll();
 $vis_labels = array_column($visitas_chart, 'estado');
 $vis_valores = array_map('intval', array_column($visitas_chart, 'total'));
 
-// Ofertas por estado
+// Ofertas por estado (respeta filtros del dashboard — JOIN propiedades para equipo)
 ofertas_asegurar_tabla($pdo);
-$stmt_of_chart = $pdo->prepare('SELECT estado, COUNT(*) AS total FROM ofertas WHERE usuario_id = :uid GROUP BY estado');
-$stmt_of_chart->execute(['uid' => $usuario_id]);
+$sql_of_chart = 'SELECT o.estado, COUNT(*) AS total FROM ofertas o';
+$p_of = ['uid' => $usuario_id];
+if ($equipo_db) {
+    $sql_of_chart .= ' INNER JOIN propiedades p ON o.propiedad_id = p.id';
+}
+$sql_of_chart .= ' WHERE o.usuario_id = :uid';
+if ($equipo_db) { $sql_of_chart .= ' AND p.equipo = :equipo'; $p_of['equipo'] = $equipo_db; }
+if ($desde) { $sql_of_chart .= ' AND o.fecha_oferta >= :desde'; $p_of['desde'] = $desde; }
+$sql_of_chart .= ' GROUP BY o.estado';
+$stmt_of_chart = $pdo->prepare($sql_of_chart);
+$stmt_of_chart->execute($p_of);
 $ofertas_chart = $stmt_of_chart->fetchAll();
 $of_labels = array_column($ofertas_chart, 'estado');
 $of_valores = array_map('intval', array_column($ofertas_chart, 'total'));
 
-// Propiedades por estado
-$stmt_prop_chart = $pdo->query('SELECT estado, COUNT(*) AS total FROM propiedades GROUP BY estado');
+// Propiedades por estado (respeta filtros del dashboard)
+$sql_prop_chart = 'SELECT estado, COUNT(*) AS total FROM propiedades WHERE 1=1';
+$p_prop = [];
+if ($equipo_db) { $sql_prop_chart .= ' AND equipo = :equipo'; $p_prop['equipo'] = $equipo_db; }
+if ($operacion_db) { $sql_prop_chart .= ' AND operacion = :operacion'; $p_prop['operacion'] = $operacion_db; }
+if ($desde) { $sql_prop_chart .= ' AND created_at >= :desde'; $p_prop['desde'] = $desde; }
+$sql_prop_chart .= ' GROUP BY estado';
+$stmt_prop_chart = $pdo->prepare($sql_prop_chart);
+$stmt_prop_chart->execute($p_prop);
 $prop_chart = $stmt_prop_chart->fetchAll();
 $prop_labels = array_column($prop_chart, 'estado');
 $prop_valores = array_map('intval', array_column($prop_chart, 'total'));
 ?>
 
 <div class="graficos_grid">
-    <div class="grafico_contenedor">
+    <div class="grafico_contenedor" data-dashboard-card="chart-embudo" draggable="false">
         <div class="grafico_titulo">Embudo Comercial</div>
-        <canvas id="chartEmbudo"></canvas>
+        <?php if (array_sum($embudo_valores) > 0): ?>
+            <canvas id="chartEmbudo"></canvas>
+        <?php else: ?>
+            <p class="sin_datos_texto">No hay prospectos en este periodo</p>
+        <?php endif; ?>
     </div>
-    <div class="grafico_contenedor">
+    <div class="grafico_contenedor" data-dashboard-card="chart-visitas" draggable="false">
         <div class="grafico_titulo">Visitas por Estado</div>
-        <canvas id="chartVisitas"></canvas>
+        <?php if (!empty($vis_valores) && array_sum($vis_valores) > 0): ?>
+            <canvas id="chartVisitas"></canvas>
+        <?php else: ?>
+            <p class="sin_datos_texto">No hay visitas en este periodo</p>
+        <?php endif; ?>
     </div>
-    <div class="grafico_contenedor">
+    <div class="grafico_contenedor" data-dashboard-card="chart-ofertas" draggable="false">
         <div class="grafico_titulo">Ofertas por Estado</div>
-        <canvas id="chartOfertas"></canvas>
+        <?php if (!empty($of_valores) && array_sum($of_valores) > 0): ?>
+            <canvas id="chartOfertas"></canvas>
+        <?php else: ?>
+            <p class="sin_datos_texto">No hay ofertas en este periodo</p>
+        <?php endif; ?>
     </div>
-    <div class="grafico_contenedor">
+    <div class="grafico_contenedor" data-dashboard-card="chart-propiedades" draggable="false">
         <div class="grafico_titulo">Propiedades por Estado</div>
-        <canvas id="chartPropiedades"></canvas>
+        <?php if (!empty($prop_valores) && array_sum($prop_valores) > 0): ?>
+            <canvas id="chartPropiedades"></canvas>
+        <?php else: ?>
+            <p class="sin_datos_texto">No hay propiedades en este periodo</p>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -459,90 +548,102 @@ document.addEventListener('DOMContentLoaded', () => {
     const paletaColores = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#8b5cf6', '#ec4899', '#14b8a6'];
 
     // Embudo
-    new Chart(document.getElementById('chartEmbudo'), {
-        type: 'bar',
-        data: {
-            labels: <?php echo json_encode($embudo_labels); ?>,
-            datasets: [{
-                data: <?php echo json_encode($embudo_valores); ?>,
-                backgroundColor: <?php echo json_encode($embudo_colores); ?>,
-                borderRadius: 6,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { color: gridColor }, max: 100, ticks: { callback: v => v + '%' } },
-                y: { grid: { display: false } }
+    const elEmbudo = document.getElementById('chartEmbudo');
+    if (elEmbudo) {
+        new Chart(elEmbudo, {
+            type: 'bar',
+            data: {
+                labels: <?php echo json_encode($embudo_labels); ?>,
+                datasets: [{
+                    data: <?php echo json_encode($embudo_valores); ?>,
+                    backgroundColor: <?php echo json_encode($embudo_colores); ?>,
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: gridColor }, max: 100, ticks: { callback: v => v + '%' } },
+                    y: { grid: { display: false } }
+                }
             }
-        }
-    });
+        });
+    }
 
     // Visitas
-    new Chart(document.getElementById('chartVisitas'), {
-        type: 'doughnut',
-        data: {
-            labels: <?php echo json_encode($vis_labels); ?>,
-            datasets: [{
-                data: <?php echo json_encode($vis_valores); ?>,
-                backgroundColor: paletaColores.slice(0, <?php echo count($vis_labels); ?>),
-                borderWidth: 2,
-                borderColor: isDark ? '#131c2e' : '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
-        }
-    });
+    const elVisitas = document.getElementById('chartVisitas');
+    if (elVisitas) {
+        new Chart(elVisitas, {
+            type: 'doughnut',
+            data: {
+                labels: <?php echo json_encode($vis_labels); ?>,
+                datasets: [{
+                    data: <?php echo json_encode($vis_valores); ?>,
+                    backgroundColor: paletaColores.slice(0, <?php echo count($vis_labels); ?>),
+                    borderWidth: 2,
+                    borderColor: isDark ? '#131c2e' : '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
+            }
+        });
+    }
 
     // Ofertas
-    new Chart(document.getElementById('chartOfertas'), {
-        type: 'doughnut',
-        data: {
-            labels: <?php echo json_encode($of_labels); ?>,
-            datasets: [{
-                data: <?php echo json_encode($of_valores); ?>,
-                backgroundColor: paletaColores.slice(0, <?php echo count($of_labels); ?>),
-                borderWidth: 2,
-                borderColor: isDark ? '#131c2e' : '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
-        }
-    });
+    const elOfertas = document.getElementById('chartOfertas');
+    if (elOfertas) {
+        new Chart(elOfertas, {
+            type: 'doughnut',
+            data: {
+                labels: <?php echo json_encode($of_labels); ?>,
+                datasets: [{
+                    data: <?php echo json_encode($of_valores); ?>,
+                    backgroundColor: paletaColores.slice(0, <?php echo count($of_labels); ?>),
+                    borderWidth: 2,
+                    borderColor: isDark ? '#131c2e' : '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
+            }
+        });
+    }
 
     // Propiedades por estado
-    new Chart(document.getElementById('chartPropiedades'), {
-        type: 'bar',
-        data: {
-            labels: <?php echo json_encode($prop_labels); ?>,
-            datasets: [{
-                label: 'Propiedades',
-                data: <?php echo json_encode($prop_valores); ?>,
-                backgroundColor: paletaColores.slice(0, <?php echo count($prop_labels); ?>),
-                borderRadius: 6,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: gridColor }, beginAtZero: true, ticks: { stepSize: 1 } }
+    const elPropiedades = document.getElementById('chartPropiedades');
+    if (elPropiedades) {
+        new Chart(elPropiedades, {
+            type: 'bar',
+            data: {
+                labels: <?php echo json_encode($prop_labels); ?>,
+                datasets: [{
+                    label: 'Propiedades',
+                    data: <?php echo json_encode($prop_valores); ?>,
+                    backgroundColor: paletaColores.slice(0, <?php echo count($prop_labels); ?>),
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: gridColor }, beginAtZero: true, ticks: { stepSize: 1 } }
+                }
             }
-        }
-    });
+        });
+    }
 });
 </script>
 
@@ -644,7 +745,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="badge_estado badge_estado--<?php echo e(map_estado_clase($propiedad['estado'])); ?>"><?php echo e($propiedad['estado']); ?></span>
                     </div>
                     <span class="mini_card_precio"><?php echo e(format_price((float) $propiedad['precio'], $propiedad['moneda'], $propiedad['periodo'])); ?></span>
-                    <span class="mini_card_stats">👁 <?php echo e((string) $propiedad['visitas']); ?> visitas · 📩 <?php echo e((string) $propiedad['ofertas']); ?> ofertas</span>
+                    <span class="mini_card_stats">👁 <?php echo (int) $propiedad['visitas_real']; ?> visitas · 📩 <?php echo (int) $propiedad['ofertas_real']; ?> ofertas</span>
                     <a href="index.php?seccion=ver_propiedad&id=<?php echo $propiedad['id']; ?>&origen=<?php echo e($origen); ?>" class="btn_ver_mas">Ver detalle ➜</a>
                 </div>
             <?php endforeach; ?>

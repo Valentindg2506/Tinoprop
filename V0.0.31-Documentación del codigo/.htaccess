@@ -1,0 +1,119 @@
+# =============================================================================
+# === TinoProp — .htaccess raíz (V0.0.31 Pre-Producción) ===
+# =============================================================================
+#
+# ¿Qué es este archivo?
+# ---------------------
+# .htaccess es un archivo de configuración de Apache (el servidor web).
+# Se coloca en la raíz del proyecto y Apache lo lee automáticamente
+# cada vez que alguien accede a cualquier página de TinoProp.
+#
+# ¿Por qué es importante?
+# -----------------------
+# Aquí definimos reglas de SEGURIDAD que protegen la aplicación contra
+# ataques comunes en la web. Sin estas reglas, la app sería vulnerable
+# a inyecciones de contenido, clickjacking, y exposición de archivos privados.
+#
+# NOTA: Si Apache no tiene habilitado "AllowOverride All" en su configuración
+# principal (httpd.conf o sites-enabled), este archivo será IGNORADO.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# SECCIÓN 1: Cabeceras de seguridad HTTP
+# ---------------------------------------------------------------------------
+# Las cabeceras HTTP son metadatos que el servidor envía al navegador
+# junto con cada respuesta. Estas cabeceras le dicen al navegador
+# cómo debe comportarse para proteger al usuario.
+#
+# <IfModule mod_headers.c> comprueba que el módulo "headers" de Apache
+# esté activo. Si no lo está, se salta este bloque sin dar error.
+# ---------------------------------------------------------------------------
+<IfModule mod_headers.c>
+
+    # X-Frame-Options "DENY"
+    # → Impide que nuestra web se cargue dentro de un <iframe> en otra página.
+    # → ¿Por qué? Para evitar ataques de "clickjacking": un atacante podría
+    #   poner TinoProp invisible dentro de su página y engañar al usuario
+    #   para que haga clic en botones sin saberlo.
+    Header always set X-Frame-Options "DENY"
+
+    # X-Content-Type-Options "nosniff"
+    # → Impide que el navegador "adivine" el tipo de archivo (MIME sniffing).
+    # → ¿Por qué? Si un atacante sube un archivo .txt con código JavaScript,
+    #   sin esta cabecera el navegador podría ejecutarlo como script.
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Referrer-Policy "strict-origin-when-cross-origin"
+    # → Controla cuánta información de la URL se envía al navegar a otro sitio.
+    # → Con esta política, al ir a otro dominio solo se envía el origen
+    #   (ej: "https://tinoprop.com") pero NO la ruta completa con parámetros.
+    # → ¿Por qué? Para no filtrar datos sensibles de la URL (IDs, tokens...).
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Permissions-Policy
+    # → Desactiva el acceso a cámara, micrófono y geolocalización.
+    # → ¿Por qué? TinoProp es un CRM inmobiliario, no necesita estos permisos.
+    #   Desactivarlos evita que un script malicioso inyectado pueda usarlos.
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+    # X-XSS-Protection "1; mode=block"
+    # → Activa el filtro anti-XSS del navegador. Si detecta un ataque XSS
+    #   (Cross-Site Scripting), bloquea la página en vez de intentar limpiarla.
+    # → NOTA: Este header es legacy (los navegadores modernos usan CSP),
+    #   pero lo mantenemos por compatibilidad con navegadores antiguos.
+    Header always set X-XSS-Protection "1; mode=block"
+
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# SECCIÓN 2: Bloquear acceso directo a archivos sensibles
+# ---------------------------------------------------------------------------
+# FilesMatch usa una expresión regular para seleccionar archivos por extensión.
+# Cualquier archivo que termine en .env, .log, .sql, .md, .py, .txt o .gitignore
+# será BLOQUEADO y devolverá un error 403 Forbidden.
+#
+# ¿Por qué?
+# - .env       → contiene contraseñas de base de datos y configuración secreta.
+# - .log       → puede revelar errores internos y rutas del servidor.
+# - .sql       → contiene la estructura y datos de la base de datos.
+# - .md        → documentación interna que no debe ser pública.
+# - .py        → scripts de utilidad que no deben ejecutarse vía web.
+# - .txt       → archivos de texto con información interna.
+# - .gitignore → revela la estructura del proyecto al atacante.
+#
+# Se incluyen dos bloques para compatibilidad:
+# - mod_authz_core.c → Apache 2.4+ (versión moderna, usa "Require all denied")
+# - fallback         → Apache 2.2  (versión antigua, usa "Order deny,allow")
+# ---------------------------------------------------------------------------
+<FilesMatch "\.(env|log|sql|md|py|txt|gitignore)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ---------------------------------------------------------------------------
+# SECCIÓN 3: Deshabilitar listado de directorios
+# ---------------------------------------------------------------------------
+# Por defecto, si alguien accede a una carpeta sin archivo index.php/index.html,
+# Apache muestra una lista de todos los archivos de esa carpeta.
+# "Options -Indexes" desactiva ese comportamiento → devuelve 403 Forbidden.
+#
+# ¿Por qué importa?
+# Sin esto, un atacante podría navegar por las carpetas del proyecto
+# y descubrir archivos sensibles, scripts internos, etc.
+# ---------------------------------------------------------------------------
+Options -Indexes
+
+# ---------------------------------------------------------------------------
+# SECCIÓN 4: Forzar codificación UTF-8
+# ---------------------------------------------------------------------------
+# Establece UTF-8 como codificación por defecto para todas las respuestas.
+# ¿Por qué? UTF-8 soporta tildes (á, é, í, ó, ú), eñes (ñ) y caracteres
+# especiales de todos los idiomas. Sin esto, podrían verse caracteres rotos
+# como "Ã¡" en lugar de "á".
+# ---------------------------------------------------------------------------
+AddDefaultCharset UTF-8

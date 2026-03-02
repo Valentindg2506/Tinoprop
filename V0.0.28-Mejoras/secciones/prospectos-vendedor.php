@@ -178,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 // Carga de datos para construir columnas y tarjetas del kanban.
-$stmt = $pdo->prepare('SELECT id, nombre, interes, estado, telefono FROM prospectos WHERE tipo = :tipo ORDER BY id DESC');
+$stmt = $pdo->prepare('SELECT id, nombre, interes, estado, telefono, created_at FROM prospectos WHERE tipo = :tipo ORDER BY id DESC');
 $stmt->execute(['tipo' => 'vendedor']);
 $prospectos_db = $stmt->fetchAll();
 ?>
@@ -249,7 +249,7 @@ $prospectos_db = $stmt->fetchAll();
                 foreach ($prospectos_db as $prospecto): 
                     if($prospecto['estado'] == $clave_estado):
                 ?>
-                    <div class="tarjeta_prospecto" 
+                    <div class="tarjeta_prospecto tarjeta_prospecto--enriquecida" 
                         draggable="false" 
                         data-id="<?php echo $prospecto['id']; ?>"
                          id="prospecto_<?php echo $prospecto['id']; ?>">
@@ -258,7 +258,13 @@ $prospectos_db = $stmt->fetchAll();
                         <p class="interes">"<?php echo e($prospecto['interes']); ?>"</p>
                         <div class="datos_contacto">
                             <span>📞 <?php echo e($prospecto['telefono']); ?></span>
+                            <?php if (!empty($prospecto['telefono'])): $tel_p = preg_replace('/[^0-9+]/', '', $prospecto['telefono']); ?>
+                            <a href="https://wa.me/<?php echo ltrim($tel_p, '+'); ?>" target="_blank" class="btn_wa_mini" title="WhatsApp">💬</a>
+                            <?php endif; ?>
                         </div>
+                        <?php if (!empty($prospecto['created_at'])): ?>
+                        <span class="tarjeta_fecha_mini">📅 <?php echo date('d/m', strtotime($prospecto['created_at'])); ?></span>
+                        <?php endif; ?>
                         <div class="acciones_tarjeta">
                             <?php if ($prospecto['estado'] === 'realizado'): ?>
                             <form method="POST" data-confirm="¿Convertir este prospecto en cliente vendedor?">

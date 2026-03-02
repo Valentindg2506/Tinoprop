@@ -22,7 +22,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] === 'csv') {
 
 // Controlador POST del módulo: alta y baja de propiedades en venta del equipo vendedor.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_verify($_POST['_token'] ?? '')) {
+    if (!csrf_verify()) {
         flash_set('error', 'Token de seguridad inválido.');
         header('Location: index.php?seccion=propiedades-vendedor');
         exit;
@@ -90,14 +90,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Elimina notas asociadas y después la propiedad.
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
-            $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'propiedad' AND entity_id = :id");
-            $stmt->execute(['id' => $id_eliminar]);
+            try {
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'propiedad' AND entity_id = :id");
+                $stmt->execute(['id' => $id_eliminar]);
 
-            $stmt = $pdo->prepare('DELETE FROM propiedades WHERE id = :id');
-            $stmt->execute(['id' => $id_eliminar]);
-            actividad_registrar($pdo, 'eliminar', 'propiedad', $id_eliminar, '');
+                $stmt = $pdo->prepare('DELETE FROM propiedades WHERE id = :id');
+                $stmt->execute(['id' => $id_eliminar]);
+                $pdo->commit();
+                actividad_registrar($pdo, 'eliminar', 'propiedad', $id_eliminar, '');
+                flash_set('success', 'Propiedad eliminada correctamente.');
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                flash_set('error', 'Error al eliminar: ' . $e->getMessage());
+            }
         }
-        flash_set('success', 'Propiedad eliminada correctamente.');
     }
 
     header('Location: index.php?seccion=' . $origen);

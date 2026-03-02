@@ -394,4 +394,46 @@ if (!in_array($pref_idioma, $idiomas_validos, true)) {
         </form>
         <p class="config_hint">Estos valores se aplican al abrir el dashboard si no hay filtros en la URL.</p>
     </section>
+
+    <!-- GESTIÓN DE ETIQUETAS -->
+    <section class="config_seccion">
+        <h3>🏷️ Gestión de etiquetas</h3>
+        <p class="config_hint">Las etiquetas se pueden asignar a clientes y propiedades desde sus fichas.</p>
+        <?php
+        etiquetas_asegurar_tabla($pdo);
+        $todas_etiquetas = etiquetas_listar($pdo);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear_etiqueta_config'])) {
+            $tn = trim($_POST['tag_nombre'] ?? '');
+            $tc = $_POST['tag_color'] ?? '#3b82f6';
+            if ($tn) { etiqueta_crear($pdo, $tn, $tc); header('Location: index.php?seccion=configuracion'); exit; }
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_etiqueta_config'])) {
+            $tid = (int) ($_POST['tag_id'] ?? 0);
+            if ($tid > 0) { etiqueta_eliminar($pdo, $tid); header('Location: index.php?seccion=configuracion'); exit; }
+        }
+        ?>
+        <div class="tags_manager">
+            <div class="tags_lista_config">
+                <?php if (empty($todas_etiquetas)): ?>
+                    <p class="sin_datos_mini">No hay etiquetas creadas.</p>
+                <?php else: ?>
+                    <?php foreach ($todas_etiquetas as $tag): ?>
+                    <div class="tag_config_item">
+                        <span class="tag_badge" style="background:<?php echo e($tag['color']); ?>"><?php echo e($tag['nombre']); ?></span>
+                        <form method="POST" style="display:inline" data-confirm="¿Eliminar esta etiqueta?">
+                            <input type="hidden" name="tag_id" value="<?php echo $tag['id']; ?>">
+                            <button type="submit" name="eliminar_etiqueta_config" class="btn_icono_sm" title="Eliminar">🗑️</button>
+                        </form>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+            <form method="POST" class="tag_crear_form tag_crear_form--config">
+                <input type="text" name="tag_nombre" placeholder="Nombre etiqueta..." required class="tag_input">
+                <input type="color" name="tag_color" value="#3b82f6" class="tag_color_pick">
+                <button type="submit" name="crear_etiqueta_config" class="btn_guardar btn_chico">Crear etiqueta</button>
+            </form>
+        </div>
+    </section>
 </div>

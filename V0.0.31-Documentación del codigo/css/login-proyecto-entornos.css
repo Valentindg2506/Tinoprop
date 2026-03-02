@@ -1,0 +1,317 @@
+/*
+ * =============================================================================
+ * TinoProp — Estilos de la página de Login (login-proyecto-entornos.css)
+ * Versión: V0.0.31 Pre-Producción
+ * =============================================================================
+ *
+ * ¿Qué hace esta hoja de estilos?
+ * --------------------------------
+ * Define el aspecto visual EXCLUSIVO de las páginas de:
+ *   - Login (login.php)
+ *   - Cambio de contraseña obligatorio (cambiar-password.php)
+ *   - Aceptación de términos (aceptar-terminos.php)
+ *
+ * Se separa del archivo principal (estilo.css) porque estas páginas se
+ * muestran ANTES de acceder al CRM, por lo que no necesitan el sidebar,
+ * el dashboard ni otros componentes internos.
+ *
+ * Dependencias:
+ *   - Google Fonts 'Inter': tipografía moderna y legible.
+ *   - Font Awesome 6.x: iconos de candado, sobre, etc.
+ *   - estilo.css: se carga junto a este archivo para variables CSS compartidas.
+ *
+ * Estructura del archivo:
+ *   1. Importación de fuentes
+ *   2. Reset básico
+ *   3. Variables CSS (colores del tema login)
+ *   4. Estilos del body (fondo gradiente)
+ *   5. Tipografía (títulos y párrafos)
+ *   6. Botón principal (gradiente con animación)
+ *   7. Formulario y contenedor
+ *   8. Campos de entrada con iconos
+ *   9. Contenedor de tarjeta (card con sombra)
+ *   10. Layout solo-login (sin panel de registro)
+ *   11. Textos auxiliares y errores
+ *   12. Responsive (adaptación a móviles)
+ * =============================================================================
+ */
+
+/* -----------------------------------------------
+   1. IMPORTACIÓN DE FUENTES
+   -----------------------------------------------
+   Cargamos la fuente "Inter" desde Google Fonts.
+   - weight 400: texto normal
+   - weight 600: semi-negrita (subtítulos)
+   - weight 800: extra-negrita (títulos principales)
+   display=swap: muestra texto con fuente del sistema mientras carga Inter,
+   evitando que la página se vea en blanco durante la carga.
+   ----------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+/* -----------------------------------------------
+   2. RESET BÁSICO
+   -----------------------------------------------
+   Elimina los márgenes y paddings por defecto que cada navegador aplica
+   de forma diferente. box-sizing: border-box hace que el padding y border
+   se incluyan DENTRO del tamaño total del elemento (más intuitivo).
+   ----------------------------------------------- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* -----------------------------------------------
+   3. VARIABLES CSS DEL TEMA LOGIN
+   -----------------------------------------------
+   :root define variables (custom properties) accesibles desde todo el CSS.
+   - --primary: color principal azul, usado en botones y títulos.
+   - --gradiente: degradado para el botón de iniciar sesión.
+   Las variables permiten cambiar toda la paleta de colores desde un solo sitio.
+   ----------------------------------------------- */
+:root {
+    --primary: #3498db;
+    --gradiente: linear-gradient(to right, #2c3e50, #3498db);
+}
+
+/* -----------------------------------------------
+   4. FONDO DE LA PÁGINA DE LOGIN
+   -----------------------------------------------
+   background-image: degradado suave de azul claro a casi blanco.
+   display: flex + justify/align-items: center: centra la tarjeta
+   tanto horizontal como verticalmente en la pantalla.
+   min-height: 100vh: ocupa como mínimo toda la altura de la ventana.
+   ----------------------------------------------- */
+body.login-page {
+    background-image: linear-gradient(to right, #eaf2fb, #f6faff);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+}
+
+/* -----------------------------------------------
+   5. TIPOGRAFÍA DEL LOGIN
+   ----------------------------------------------- */
+/* Título principal: "🏠 TinoProp" en azul y extra-negrita */
+body.login-page h1 {
+    font-weight: 800;
+    margin: 0 0 1rem 0;
+    color: var(--primary);
+}
+
+/* Párrafos dentro del login: texto pequeño y ligero */
+body.login-page p {
+    font-size: 14px;
+    font-weight: 100;
+    line-height: 20px;
+    letter-spacing: 0.5px;
+    margin: 20px 0 30px;
+}
+
+/* -----------------------------------------------
+   6. BOTÓN PRINCIPAL DE LOGIN
+   -----------------------------------------------
+   Diseño pill (border-radius: 20px) con fondo degradado.
+   box-shadow da un efecto de "flotar" sobre la página.
+   transition: animación suave al hacer clic/hover.
+   ----------------------------------------------- */
+body.login-page button {
+    border-radius: 20px;
+    border: 1px solid var(--primary);
+    background: var(--gradiente);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 12px 45px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: transform 80ms ease-in, box-shadow 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.35);
+    margin-top: 1rem;
+}
+
+/* Efecto al presionar: el botón se encoge ligeramente (feedback táctil visual) */
+body.login-page button:active {
+    transform: scale(0.95);
+}
+
+/* Anillo de foco visible para accesibilidad (navegación con teclado) */
+body.login-page button:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* Al pasar el ratón: sombra más pronunciada para indicar interactividad */
+body.login-page button:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Botón "fantasma": variante transparente (no se usa en login, pero está disponible) */
+body.login-page button.ghost {
+    background: transparent;
+    border-color: #FFFFFF;
+    box-shadow: none;
+}
+
+body.login-page button.ghost:hover {
+    background: #FFFFFF;
+    color: var(--primary);
+}
+
+/* -----------------------------------------------
+   7. FORMULARIO
+   -----------------------------------------------
+   El formulario se centra verticalmente dentro de su contenedor
+   usando Flexbox en dirección columna (elementos uno debajo del otro).
+   ----------------------------------------------- */
+body.login-page form {
+    background-color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 50px;
+    height: 100%;
+    text-align: center;
+}
+
+/* -----------------------------------------------
+   8. CAMPOS DE ENTRADA CON ICONOS
+   -----------------------------------------------
+   Cada campo tiene un icono (Font Awesome) posicionado a la izquierda.
+   El input tiene padding-left extra (40px) para no tapar el icono.
+   position: relative en el grupo permite posicionar el icono con
+   position: absolute dentro de él.
+   ----------------------------------------------- */
+body.login-page .input-group {
+    position: relative;
+    width: 100%;
+    margin: 8px 0;
+}
+
+/* Campo de texto: fondo grisáceo, sin borde visible, padding izquierdo para el icono */
+body.login-page .input-group input {
+    background-color: #f4f8fc;
+    border: none;
+    padding: 12px 15px 12px 40px;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+}
+
+/* Icono dentro del campo: posicionado absolutamente a la izquierda, centrado verticalmente */
+body.login-page .input-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #5f6f7f;
+}
+
+/* -----------------------------------------------
+   9. CONTENEDOR PRINCIPAL (TARJETA/CARD)
+   -----------------------------------------------
+   La tarjeta blanca centrada que contiene el formulario.
+   box-shadow: efecto de elevación ("Material Design").
+   overflow: hidden: evita que contenido desborde las esquinas redondeadas.
+   ----------------------------------------------- */
+body.login-page .container {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 14px 28px rgba(44, 62, 80, 0.22), 0 10px 10px rgba(44, 62, 80, 0.18);
+    position: relative;
+    overflow: hidden;
+    width: 900px;
+    max-width: 100%;
+    min-height: 550px;
+}
+
+/* Contenedor del formulario (posición absoluta para posibles transiciones) */
+body.login-page .form-container {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    transition: all 0.6s ease-in-out;
+}
+
+/* Panel de login: ocupa el lado izquierdo (50%) */
+body.login-page .sign-in-container {
+    left: 0;
+    width: 50%;
+    z-index: 2;
+}
+
+/* -----------------------------------------------
+   10. LAYOUT SOLO-LOGIN (sin panel de registro)
+   -----------------------------------------------
+   TinoProp no tiene registro público: los usuarios los crea
+   el SuperAdmin o el Jefe. Por eso el contenedor se estrecha
+   a 480px y el formulario ocupa el 100% del ancho.
+   ----------------------------------------------- */
+body.login-page .container.login-solo {
+    max-width: 480px;
+    min-height: auto;
+}
+
+/* En modo solo-login, el formulario pasa de absoluto a relativo y ocupa todo */
+body.login-page .container.login-solo .sign-in-container {
+    position: relative;
+    width: 100%;
+}
+
+/* -----------------------------------------------
+   11. TEXTOS AUXILIARES Y MENSAJES
+   ----------------------------------------------- */
+/* Subtítulo bajo el título: "Gestión Inmobiliaria" */
+body.login-page .login-subtitulo {
+    font-size: 0.95rem;
+    color: #5f6f7f;
+    margin: 0 0 1.2rem 0;
+    letter-spacing: 0.3px;
+}
+
+/* Texto de ayuda al pie: "Contacta con tu administrador..." */
+body.login-page .login-ayuda {
+    font-size: 0.78rem;
+    color: #8899aa;
+    margin-top: 1.5rem;
+}
+
+/* Mensaje de error (credenciales inválidas, cuenta bloqueada, etc.) */
+body.login-page .error-text {
+    color: #c0392b;
+    font-size: 0.75rem;
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+
+/* -----------------------------------------------
+   12. RESPONSIVE — Adaptación a móviles (≤ 768px)
+   -----------------------------------------------
+   En pantallas pequeñas (móviles/tablets):
+   - El contenedor ocupa toda la pantalla (sin márgenes).
+   - La tarjeta solo-login mantiene bordes redondeados con margen pequeño.
+   ----------------------------------------------- */
+@media (max-width: 768px) {
+    body.login-page {
+        padding: 0;
+    }
+
+    body.login-page .container {
+        width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    body.login-page .container.login-solo {
+        min-height: auto;
+        margin: 1rem;
+        border-radius: 10px;
+        width: calc(100% - 2rem);
+    }
+}

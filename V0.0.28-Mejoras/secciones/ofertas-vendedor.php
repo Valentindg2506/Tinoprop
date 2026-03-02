@@ -25,7 +25,7 @@ $estados_oferta = ['pendiente', 'aceptada', 'rechazada', 'contraoferta'];
 
 // Controlador POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_verify($_POST['_token'] ?? '')) {
+    if (!csrf_verify()) {
         flash_set('error', 'Token de seguridad inválido.');
         header('Location: index.php?seccion=ofertas-vendedor');
         exit;

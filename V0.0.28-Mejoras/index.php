@@ -1,6 +1,6 @@
 <?php
 /*
- * Archivo: index.php — V0.0.27 Mejoras
+ * Archivo: index.php — V0.0.28 Mejoras
  * Incluye: sidebar colapsable, buscador global, breadcrumbs, notificaciones, CSRF, iconos menú.
  */
 require_once __DIR__ . '/inc/bootstrap.php';
@@ -85,7 +85,8 @@ $num_notifs = count($notificaciones);
 			<h3 class="titulo_seccion"><span class="sidebar_titulo">Inicio</span></h3>
 			<ul>
 				<li><a href="?seccion=dashboard" <?php if($seccion_actual==='dashboard')echo'aria-current="page"';?>><span class="menu_icono">📊</span> <span class="sidebar_titulo">Dashboard</span></a><span class="btn_star" onclick="toggle_favorito('Dashboard')">☆</span></li>
-				<li><a href="?seccion=recordatorios" <?php if($seccion_actual==='recordatorios')echo'aria-current="page"';?>><span class="menu_icono">📅</span> <span class="sidebar_titulo">Recordatorios</span></a><span class="btn_star" onclick="toggle_favorito('Recordatorios')">☆</span></li>
+				<li><a href="?seccion=recordatorios" <?php if($seccion_actual==='recordatorios')echo'aria-current="page"';?>><span class="menu_icono">⏰</span> <span class="sidebar_titulo">Recordatorios</span></a><span class="btn_star" onclick="toggle_favorito('Recordatorios')">☆</span></li>
+				<li><a href="?seccion=matching" <?php if($seccion_actual==='matching')echo'aria-current="page"';?>><span class="menu_icono">🔗</span> <span class="sidebar_titulo">Matching</span></a><span class="btn_star" onclick="toggle_favorito('Matching')">☆</span></li>
 				<li><a href="?seccion=documentacion" <?php if($seccion_actual==='documentacion')echo'aria-current="page"';?>><span class="menu_icono">📖</span> <span class="sidebar_titulo">Documentación</span></a><span class="btn_star" onclick="toggle_favorito('Documentación')">☆</span></li>
 			</ul>
 		</div>
@@ -115,6 +116,7 @@ $num_notifs = count($notificaciones);
 				<li><a href="?seccion=proceso-vendedor" <?php if($seccion_actual==='proceso-vendedor')echo'aria-current="page"';?>><span class="menu_icono">📋</span> <span class="sidebar_titulo">Proceso</span></a><span class="btn_star" onclick="toggle_favorito('Proceso Vendedor')">☆</span></li>
 				<li><a href="?seccion=visitas-vendedor" <?php if($seccion_actual==='visitas-vendedor')echo'aria-current="page"';?>><span class="menu_icono">🚶</span> <span class="sidebar_titulo">Visitas</span></a><span class="btn_star" onclick="toggle_favorito('Visitas Vendedor')">☆</span></li>
 				<li><a href="?seccion=ofertas-vendedor" <?php if($seccion_actual==='ofertas-vendedor')echo'aria-current="page"';?>><span class="menu_icono">💰</span> <span class="sidebar_titulo">Ofertas</span></a><span class="btn_star" onclick="toggle_favorito('Ofertas Vendedor')">☆</span></li>
+				<li><a href="?seccion=post-venta" <?php if($seccion_actual==='post-venta')echo'aria-current="page"';?>><span class="menu_icono">🏡</span> <span class="sidebar_titulo">Post-Venta</span></a><span class="btn_star" onclick="toggle_favorito('Post-Venta')">☆</span></li>
 			</ul>
 		</div>
 		
@@ -126,12 +128,14 @@ $num_notifs = count($notificaciones);
 				<li><a href="?seccion=busqueda-avanzada" <?php if($seccion_actual==='busqueda-avanzada')echo'aria-current="page"';?>><span class="menu_icono">🔎</span> <span class="sidebar_titulo">Búsqueda Avanzada</span></a><span class="btn_star" onclick="toggle_favorito('Búsqueda Avanzada')">☆</span></li>
 				<li><a href="?seccion=proceso-comprador" <?php if($seccion_actual==='proceso-comprador')echo'aria-current="page"';?>><span class="menu_icono">📋</span> <span class="sidebar_titulo">Proceso</span></a><span class="btn_star" onclick="toggle_favorito('Proceso Comprador')">☆</span></li>
 				<li><a href="?seccion=visitas-comprador" <?php if($seccion_actual==='visitas-comprador')echo'aria-current="page"';?>><span class="menu_icono">🚶</span> <span class="sidebar_titulo">Visitas</span></a><span class="btn_star" onclick="toggle_favorito('Visitas Comprador')">☆</span></li>
+				<li><a href="?seccion=post-venta" <?php if($seccion_actual==='post-venta')echo'aria-current="page"';?>><span class="menu_icono">🏡</span> <span class="sidebar_titulo">Post-Venta</span></a><span class="btn_star" onclick="toggle_favorito('Post-Venta')">☆</span></li>
 			</ul>
 		</div>
 
 		<div class="grupo_menu">
 			<h3 class="titulo_seccion"><span class="sidebar_titulo">Sistema</span></h3>
 			<ul>
+				<li><a href="?seccion=importar-csv" <?php if($seccion_actual==='importar-csv')echo'aria-current="page"';?>><span class="menu_icono">📥</span> <span class="sidebar_titulo">Importar CSV</span></a><span class="btn_star" onclick="toggle_favorito('Importar CSV')">☆</span></li>
 				<li><a href="?seccion=actividad" <?php if($seccion_actual==='actividad')echo'aria-current="page"';?>><span class="menu_icono">📜</span> <span class="sidebar_titulo">Historial</span></a><span class="btn_star" onclick="toggle_favorito('Historial')">☆</span></li>
 				<li><a href="?seccion=configuracion" <?php if($seccion_actual==='configuracion')echo'aria-current="page"';?>><span class="menu_icono">⚙️</span> <span class="sidebar_titulo">Configuración</span></a><span class="btn_star" onclick="toggle_favorito('Configuración')">☆</span></li>
 				<li><a href="logout.php"><span class="menu_icono">🚪</span> <span class="sidebar_titulo">Cerrar Sesión</span></a></li>

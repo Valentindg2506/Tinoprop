@@ -20,7 +20,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] === 'csv') {
 
 // Controlador POST del módulo: alta y baja de clientes vendedor.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_verify($_POST['_token'] ?? '')) {
+    if (!csrf_verify()) {
         flash_set('error', 'Token de seguridad inválido. Inténtalo de nuevo.');
         header('Location: index.php?seccion=' . $origen);
         exit;
@@ -61,13 +61,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['eliminar_cliente'])) {
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
-            $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'cliente' AND entity_id = :id");
-            $stmt->execute(['id' => $id_eliminar]);
-            $stmt = $pdo->prepare('DELETE FROM clientes WHERE id = :id');
-            $stmt->execute(['id' => $id_eliminar]);
-            actividad_registrar($pdo, 'eliminar', 'cliente', $id_eliminar, 'Cliente vendedor eliminado');
+            try {
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare("DELETE FROM notas WHERE entity_type = 'cliente' AND entity_id = :id");
+                $stmt->execute(['id' => $id_eliminar]);
+                $stmt = $pdo->prepare('DELETE FROM clientes WHERE id = :id');
+                $stmt->execute(['id' => $id_eliminar]);
+                $pdo->commit();
+                actividad_registrar($pdo, 'eliminar', 'cliente', $id_eliminar, 'Cliente vendedor eliminado');
+                flash_set('success', 'Cliente eliminado correctamente.');
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                flash_set('error', 'Error al eliminar: ' . $e->getMessage());
+            }
         }
-        flash_set('success', 'Cliente eliminado correctamente.');
     }
 
     header('Location: index.php?seccion=' . $origen);
@@ -81,7 +88,7 @@ $total_clientes = (int)$stmt_total->fetchColumn();
 $pagina_actual = max(1, (int)($_GET['pagina'] ?? 1));
 $paginacion = paginar($total_clientes, 15, $pagina_actual);
 
-$stmt = $pdo->prepare('SELECT id, nombre, apellido, telefono, email FROM clientes WHERE tipo = :tipo ORDER BY id DESC LIMIT :lim OFFSET :off');
+$stmt = $pdo->prepare('SELECT id, nombre, apellido, telefono, email, operacion FROM clientes WHERE tipo = :tipo ORDER BY id DESC LIMIT :lim OFFSET :off');
 $stmt->bindValue('tipo', 'vendedor');
 $stmt->bindValue('lim', $paginacion['por_pagina'], PDO::PARAM_INT);
 $stmt->bindValue('off', $paginacion['offset'], PDO::PARAM_INT);
@@ -138,6 +145,12 @@ $clientes_db = $stmt->fetchAll();
     <a href="index.php?seccion=<?php echo $origen; ?>&exportar=csv" class="btn_exportar">📥 Exportar CSV</a>
 </div>
 
+<div class="vista_toggle">
+    <button type="button" class="btn_toggle_vista active" data-vista="tabla" onclick="cambiarVista('tabla')">📋 Tabla</button>
+    <button type="button" class="btn_toggle_vista" data-vista="tarjetas" onclick="cambiarVista('tarjetas')">🃏 Tarjetas</button>
+</div>
+
+<div class="vista_contenido vista_tabla">
 <div class="contenedor_tabla">
     <table class="tabla_datos">
         <thead>
@@ -171,5 +184,48 @@ $clientes_db = $stmt->fetchAll();
         </tbody>
     </table>
 </div>
+</div>
+<div class="vista_contenido vista_tarjetas" style="display:none">
+    <div class="tarjetas_grid">
+        <?php foreach ($clientes_db as $cliente): ?>
+        <div class="tarjeta_cliente_card">
+            <div class="tarjeta_cliente_header">
+                <div class="tarjeta_avatar"><?php echo mb_strtoupper(mb_substr($cliente['nombre'], 0, 1) . mb_substr($cliente['apellido'] ?? '', 0, 1)); ?></div>
+                <div>
+                    <strong><?php echo e($cliente['nombre'] . ' ' . ($cliente['apellido'] ?? '')); ?></strong>
+                    <span class="badge_estado"><?php echo e($cliente['operacion'] ?? ''); ?></span>
+                </div>
+            </div>
+            <div class="tarjeta_cliente_body">
+                <?php if (!empty($cliente['telefono'])): ?><p>📞 <?php echo e($cliente['telefono']); ?></p><?php endif; ?>
+                <?php if (!empty($cliente['email'])): ?><p>📧 <?php echo e($cliente['email']); ?></p><?php endif; ?>
+            </div>
+            <div class="tarjeta_cliente_footer">
+                <a href="?seccion=ver_cliente&id=<?php echo $cliente['id']; ?>&origen=clientes-vendedor" class="btn_secundario btn_chico">Ver más</a>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
 
 <?php echo renderizar_paginacion($paginacion, 'index.php?seccion=' . $origen); ?>
+
+<script>
+function cambiarVista(vista) {
+    document.querySelectorAll('.vista_contenido').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.btn_toggle_vista').forEach(el => el.classList.remove('active'));
+    if (vista === 'tabla') {
+        document.querySelector('.vista_tabla').style.display = '';
+        document.querySelector('[data-vista="tabla"]').classList.add('active');
+    } else {
+        document.querySelector('.vista_tarjetas').style.display = '';
+        document.querySelector('[data-vista="tarjetas"]').classList.add('active');
+    }
+    localStorage.setItem('tinoprop_vista_clientes', vista);
+}
+// Restore preference
+document.addEventListener('DOMContentLoaded', () => {
+    const pref = localStorage.getItem('tinoprop_vista_clientes');
+    if (pref === 'tarjetas') cambiarVista('tarjetas');
+});
+</script>

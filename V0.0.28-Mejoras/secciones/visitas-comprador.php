@@ -27,7 +27,7 @@ $estados_visita = ['pendiente', 'realizada', 'cancelada'];
 
 // Controlador POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_verify($_POST['_token'] ?? '')) {
+    if (!csrf_verify()) {
         flash_set('error', 'Token de seguridad inválido.');
         header('Location: index.php?seccion=visitas-comprador');
         exit;
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = visita_crear($pdo, 'comprador', $propiedad_id ?: null, $cliente_id ?: null, $fecha, $hora, $observaciones, true);
 
         if ($id) {
-            actividad_registrar($pdo, 'crear_visita_comprador', 'Visita comprador #' . $id . ' creada');
+            actividad_registrar($pdo, 'crear', 'visita', $id, 'Visita comprador creada');
             flash_set('success', 'Visita creada correctamente y añadida al calendario de recordatorios.');
         } else {
             flash_set('error', 'Error al crear la visita.');
@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id_eliminar > 0) {
             $ok = visita_eliminar($pdo, $id_eliminar, true);
             if ($ok) {
-                actividad_registrar($pdo, 'eliminar_visita_comprador', 'Visita comprador #' . $id_eliminar . ' eliminada');
+                actividad_registrar($pdo, 'eliminar', 'visita', $id_eliminar, 'Visita comprador eliminada');
             }
             flash_set($ok ? 'success' : 'error', $ok ? 'Visita eliminada correctamente.' : 'Error al eliminar.');
         }
