@@ -143,6 +143,10 @@ $lang_attr = in_array(idioma_actual(), $idiomas_validos, true) ? idioma_actual()
 					<a href="?seccion=visitas-vendedor">Visitas</a>
 					<span class="btn_star" onclick="toggle_favorito('Visitas Vendedor')">☆</span>
 				</li>
+				<li>
+					<a href="?seccion=ofertas-vendedor">Ofertas</a>
+					<span class="btn_star" onclick="toggle_favorito('Ofertas Vendedor')">☆</span>
+				</li>
 			</ul>
 		</div>
 		

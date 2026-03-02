@@ -1,10 +1,10 @@
 <?php
 /*
- * Sección: Prospectos vendedor
- * Rol: tablero kanban para gestionar pipeline de prospectos del equipo vendedor.
+ * Sección: Prospectos comprador
+ * Rol: tablero kanban para gestionar pipeline de prospectos del equipo comprador.
  * Acciones: mover_prospecto_drag, crear_prospecto, editar_prospecto, eliminar_prospecto.
  */
-/* Seccion: Kanban de Prospectos (Vendedor)
+/* Seccion: Kanban de Prospectos (Comprador)
     Descripcion: Tablero visual conectado a MySQL
 */
 require_once __DIR__ . '/../inc/bootstrap.php';
@@ -19,7 +19,7 @@ $columnas_kanban = [
 ];
 
 $pdo = db();
-$origen = 'prospectos-vendedor';
+$origen = 'prospectos-comprador';
 $mensaje_error = flash_get('error');
 $mensaje_exito = flash_get('success');
 
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([
             'estado' => $estado,
             'id' => $id_mover,
-            'tipo' => 'vendedor',
+            'tipo' => 'comprador',
         ]);
 
         echo json_encode(['ok' => true]);
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              VALUES (:tipo, :nombre, :interes, :estado, :telefono)'
         );
         $stmt->execute([
-            'tipo' => 'vendedor',
+            'tipo' => 'comprador',
             'nombre' => $nombre,
             'interes' => $interes,
             'estado' => $estado,
@@ -134,24 +134,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['eliminar_prospecto'])) {
-        // Eliminación definitiva del prospecto (solo tipo vendedor).
+        // Eliminación definitiva del prospecto (solo tipo comprador).
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
             $stmt = $pdo->prepare('DELETE FROM prospectos WHERE id = :id AND tipo = :tipo');
-            $stmt->execute(['id' => $id_eliminar, 'tipo' => 'vendedor']);
+            $stmt->execute(['id' => $id_eliminar, 'tipo' => 'comprador']);
         }
         flash_set('success', 'Prospecto eliminado correctamente.');
     }
 
     if (isset($_POST['convertir_a_cliente'])) {
-        // Convierte un prospecto "realizado" en un cliente vendedor.
+        // Convierte un prospecto "realizado" en un cliente comprador.
         $id_conv = (int) ($_POST['id'] ?? 0);
         if ($id_conv > 0) {
             $stmt = $pdo->prepare('SELECT nombre, telefono, interes FROM prospectos WHERE id = :id AND tipo = :tipo');
-            $stmt->execute(['id' => $id_conv, 'tipo' => 'vendedor']);
+            $stmt->execute(['id' => $id_conv, 'tipo' => 'comprador']);
             $p = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($p) {
-                // Separar nombre y apellido si es posible
                 $partes = explode(' ', $p['nombre'], 2);
                 $nombre_c = $partes[0];
                 $apellido_c = $partes[1] ?? '';
@@ -160,12 +159,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      VALUES (:tipo, :nombre, :apellido, :telefono, :email, :operacion)'
                 );
                 $stmt2->execute([
-                    'tipo' => 'vendedor',
+                    'tipo' => 'comprador',
                     'nombre' => $nombre_c,
                     'apellido' => $apellido_c,
                     'telefono' => $p['telefono'],
                     'email' => '',
-                    'operacion' => 'Venta',
+                    'operacion' => 'Compra',
                 ]);
                 flash_set('success', 'Prospecto convertido a cliente correctamente. Puedes completar sus datos en la sección Clientes.');
             } else {
@@ -179,12 +178,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 // Carga de datos para construir columnas y tarjetas del kanban.
 $stmt = $pdo->prepare('SELECT id, nombre, interes, estado, telefono FROM prospectos WHERE tipo = :tipo ORDER BY id DESC');
-$stmt->execute(['tipo' => 'vendedor']);
+$stmt->execute(['tipo' => 'comprador']);
 $prospectos_db = $stmt->fetchAll();
 ?>
 
 <div class="encabezado_seccion">
-    <h2>Tablero de Prospectos</h2>
     <div class="acciones_dashboard">
         <button type="button" class="btn_guardar btn-editar-kanban">Editar orden</button>
         <a href="#nuevo-prospecto" class="btn_nuevo_cliente">+ Nuevo Prospecto</a>
@@ -192,7 +190,7 @@ $prospectos_db = $stmt->fetchAll();
 </div>
 
 <div id="nuevo-prospecto" class="form_panel">
-    <h3>Crear prospecto vendedor</h3>
+    <h3>Crear prospecto comprador</h3>
     <?php if ($mensaje_error): ?>
         <div class="alerta_error"><?php echo e($mensaje_error); ?></div>
     <?php endif; ?>
@@ -262,7 +260,7 @@ $prospectos_db = $stmt->fetchAll();
                         </div>
                         <div class="acciones_tarjeta">
                             <?php if ($prospecto['estado'] === 'realizado'): ?>
-                            <form method="POST" data-confirm="¿Convertir este prospecto en cliente vendedor?">
+                            <form method="POST" data-confirm="¿Convertir este prospecto en cliente comprador?">
                                 <input type="hidden" name="id" value="<?php echo $prospecto['id']; ?>">
                                 <button type="submit" name="convertir_a_cliente" class="btn_guardar btn_chico">👤 A cliente</button>
                             </form>

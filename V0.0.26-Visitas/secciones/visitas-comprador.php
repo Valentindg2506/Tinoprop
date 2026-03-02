@@ -122,7 +122,7 @@ $clientes_list = $stmt->fetchAll();
 <!-- Formulario nueva visita -->
 <div id="nueva-visita" class="form_panel">
     <h3>Programar nueva visita</h3>
-    <p style="font-size: 12px; color: #7f8c8d; margin-bottom: 12px;">
+    <p class="config_hint">
         ℹ️ Al crear una visita se añadirá automáticamente un recordatorio en el calendario.
     </p>
     <form method="POST" class="form_grid">
@@ -156,7 +156,7 @@ $clientes_list = $stmt->fetchAll();
             <label for="hora_visita">Hora</label>
             <input id="hora_visita" name="hora_visita" type="time">
         </div>
-        <div class="campo_input" style="grid-column: 1 / -1;">
+        <div class="campo_input full_width">
             <label for="observaciones">Observaciones</label>
             <input id="observaciones" name="observaciones" type="text" placeholder="Notas sobre la visita...">
         </div>
@@ -218,7 +218,7 @@ $clientes_list = $stmt->fetchAll();
                             <br><small><?php echo e($v['propiedad_ref']); ?></small>
                         <?php endif; ?>
                     <?php else: ?>
-                        <span style="color: #95a5a6;">Sin asignar</span>
+                        <span class="texto_muted">Sin asignar</span>
                     <?php endif; ?>
                 </td>
                 <td>
@@ -228,11 +228,11 @@ $clientes_list = $stmt->fetchAll();
                             <br><small>📞 <?php echo e($v['cliente_telefono']); ?></small>
                         <?php endif; ?>
                     <?php else: ?>
-                        <span style="color: #95a5a6;">Sin asignar</span>
+                        <span class="texto_muted">Sin asignar</span>
                     <?php endif; ?>
                 </td>
                 <td>
-                    <form method="POST" style="display: inline;">
+                    <form method="POST" class="form_inline">
                         <input type="hidden" name="id" value="<?php echo $v['id']; ?>">
                         <select name="estado" onchange="this.form.submit()" class="select_estado select_estado_<?php echo e($v['estado']); ?>">
                             <?php foreach ($estados_visita as $est): ?>
@@ -250,7 +250,7 @@ $clientes_list = $stmt->fetchAll();
                 <td>
                     <div class="acciones_inline">
                         <details class="detalle_inline_visita">
-                            <summary class="btn_guardar" style="font-size: 12px; padding: 4px 8px;">✏️</summary>
+                            <summary class="btn_icono btn_icono_editar" title="Editar">✏️</summary>
                             <div class="form_editar_visita">
                                 <form method="POST" class="form_grid">
                                     <input type="hidden" name="id" value="<?php echo $v['id']; ?>">
@@ -304,7 +304,7 @@ $clientes_list = $stmt->fetchAll();
                         </details>
                         <form method="POST" data-confirm="¿Eliminar esta visita y su recordatorio asociado? Esta accion no se puede deshacer.">
                             <input type="hidden" name="id" value="<?php echo $v['id']; ?>">
-                            <button type="submit" name="eliminar_visita" class="btn_peligro" style="font-size: 12px; padding: 4px 8px;">🗑️</button>
+                            <button type="submit" name="eliminar_visita" class="btn_icono btn_icono_eliminar" title="Eliminar">🗑️</button>
                         </form>
                     </div>
                 </td>

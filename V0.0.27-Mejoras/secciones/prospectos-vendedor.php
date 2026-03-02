@@ -184,7 +184,6 @@ $prospectos_db = $stmt->fetchAll();
 ?>
 
 <div class="encabezado_seccion">
-    <h2>Tablero de Prospectos</h2>
     <div class="acciones_dashboard">
         <button type="button" class="btn_guardar btn-editar-kanban">Editar orden</button>
         <a href="#nuevo-prospecto" class="btn_nuevo_cliente">+ Nuevo Prospecto</a>

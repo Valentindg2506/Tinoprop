@@ -209,6 +209,7 @@ body.tema-oscuro ::-webkit-scrollbar-thumb:hover { background: var(--borde-hover
     overflow-y: auto;
     border-right: none;
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+    transition: width 0.25s ease, padding 0.25s ease;
 }
 
 .menu_lateral h2 {
@@ -4926,4 +4927,663 @@ select:disabled {
     .form_editar_visita .form_grid {
         grid-template-columns: 1fr;
     }
+}
+
+
+/* =============================================
+   34. SIDEBAR HEADER & COLAPSABLE
+   ============================================= */
+.sidebar_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--gap-lg);
+    padding-bottom: var(--gap-md);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.sidebar_header h2 {
+    margin: 0;
+    padding: 0;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+}
+
+.btn_colapsar_sidebar {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: var(--fs-sm);
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radio-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--trans);
+    flex-shrink: 0;
+}
+
+.btn_colapsar_sidebar:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.menu_icono {
+    display: inline-flex;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+}
+
+/* Sidebar colapsado — diseño compacto con tooltips */
+.menu_lateral.sidebar_colapsado {
+    width: 68px;
+    padding: var(--gap-md) 6px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* Ocultar textos, estrellas, buscador y badge */
+.menu_lateral.sidebar_colapsado .sidebar_titulo,
+.menu_lateral.sidebar_colapsado .titulo_seccion .sidebar_titulo,
+.menu_lateral.sidebar_colapsado .btn_star,
+.menu_lateral.sidebar_colapsado .buscador_global_wrap,
+.menu_lateral.sidebar_colapsado .notificaciones_wrap .sidebar_titulo { display: none; }
+
+/* Header: solo icono centrado */
+.menu_lateral.sidebar_colapsado .sidebar_header {
+    flex-direction: column;
+    gap: var(--gap-sm);
+    align-items: center;
+    padding-bottom: var(--gap-sm);
+    margin-bottom: var(--gap-sm);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.menu_lateral.sidebar_colapsado .sidebar_header h2 {
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.menu_lateral.sidebar_colapsado .btn_colapsar_sidebar {
+    transform: rotate(180deg);
+    width: 32px;
+    height: 32px;
+}
+
+/* Títulos de grupo → línea separadora sutil */
+.menu_lateral.sidebar_colapsado .titulo_seccion {
+    font-size: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    margin: var(--gap-sm) 4px;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Grupos */
+.menu_lateral.sidebar_colapsado .grupo_menu {
+    width: 100%;
+    margin-bottom: var(--gap-sm);
+}
+
+/* Items de menú → icono centrado con hover circular */
+.menu_lateral.sidebar_colapsado ul li {
+    justify-content: center;
+    margin-bottom: 2px;
+}
+
+.menu_lateral.sidebar_colapsado ul li a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    margin: 0 auto;
+    border-radius: var(--radio-md);
+    font-size: 0;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.menu_lateral.sidebar_colapsado ul li a .menu_icono {
+    font-size: 1.25rem;
+    width: auto;
+}
+
+.menu_lateral.sidebar_colapsado ul li a:hover {
+    background: rgba(255, 255, 255, 0.15);
+    padding-left: 0;
+    transform: scale(1.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.menu_lateral.sidebar_colapsado ul li a[aria-current="page"] {
+    background: var(--fondo-sidebar-active);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Tooltip al pasar el ratón sobre icono en modo colapsado */
+.menu_lateral.sidebar_colapsado ul li a::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 5px 10px;
+    border-radius: var(--radio-sm);
+    font-size: var(--fs-xs);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+
+.menu_lateral.sidebar_colapsado ul li a:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(2px);
+}
+
+/* Botón de notificaciones en modo colapsado */
+.menu_lateral.sidebar_colapsado .notificaciones_wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--gap-sm);
+}
+
+.menu_lateral.sidebar_colapsado .btn_notificaciones {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--radio-md);
+    position: relative;
+}
+
+.menu_lateral.sidebar_colapsado .notif_badge {
+    display: inline-flex;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 0.6rem;
+    padding: 0 3px;
+}
+
+.menu_lateral.sidebar_colapsado .notificaciones_dropdown {
+    left: calc(100% + 4px);
+    top: 0;
+    right: auto;
+    min-width: 260px;
+}
+
+
+/* =============================================
+   35. BUSCADOR GLOBAL
+   ============================================= */
+.buscador_global_wrap {
+    position: relative;
+    margin-bottom: var(--gap-md);
+}
+
+.buscador_global_input {
+    width: 100%;
+    padding: var(--gap-sm) var(--gap-md);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radio-pill);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: var(--fs-sm);
+    transition: all var(--trans);
+}
+
+.buscador_global_input::placeholder { color: rgba(255, 255, 255, 0.5); }
+.buscador_global_input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.buscador_global_resultados {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--fondo-tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-md);
+    box-shadow: var(--sombra-lg);
+    max-height: 350px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.buscador_global_resultados.activo { display: block; }
+
+.resultado_item {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+    padding: var(--gap-sm) var(--gap-md);
+    color: var(--texto);
+    text-decoration: none;
+    font-size: var(--fs-sm);
+    transition: background var(--trans);
+    border-bottom: 1px solid var(--borde);
+}
+
+.resultado_item:last-child { border-bottom: none; }
+.resultado_item:hover { background: var(--fondo-hover); }
+
+.resultado_icono { font-size: 1.1rem; flex-shrink: 0; }
+.resultado_info { flex: 1; min-width: 0; }
+.resultado_titulo { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.resultado_detalle { font-size: var(--fs-xs); color: var(--texto-secundario); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.resultado_vacio { padding: var(--gap-md); text-align: center; color: var(--texto-claro); font-size: var(--fs-sm); }
+
+
+/* =============================================
+   36. NOTIFICACIONES DROPDOWN
+   ============================================= */
+.notificaciones_wrap {
+    position: relative;
+    margin-bottom: var(--gap-md);
+}
+
+.btn_notificaciones {
+    width: 100%;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(219, 234, 254, 0.8);
+    padding: var(--gap-sm) var(--gap-md);
+    border-radius: var(--radio-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+    font-size: var(--fs-base);
+    transition: all var(--trans);
+    position: relative;
+}
+
+.btn_notificaciones:hover {
+    background: var(--fondo-sidebar-hover);
+    color: #fff;
+}
+
+.notif_badge {
+    background: var(--peligro);
+    color: #fff;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: var(--radio-pill);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    margin-left: auto;
+    animation: pulse_badge 2s infinite;
+}
+
+@keyframes pulse_badge {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+}
+
+.notificaciones_dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--fondo-tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-md);
+    box-shadow: var(--sombra-lg);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1001;
+    display: none;
+    min-width: 220px;
+}
+
+.notificaciones_dropdown.activo { display: block; }
+
+.notif_item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-sm);
+    padding: var(--gap-sm) var(--gap-md);
+    color: var(--texto);
+    text-decoration: none;
+    font-size: var(--fs-sm);
+    transition: background var(--trans);
+    border-bottom: 1px solid var(--borde);
+}
+
+.notif_item:last-child { border-bottom: none; }
+.notif_item:hover { background: var(--fondo-hover); }
+.notif_icono { flex-shrink: 0; font-size: 1rem; }
+.notif_texto { flex: 1; line-height: 1.4; }
+.notif_vacio { padding: var(--gap-md); text-align: center; color: var(--texto-claro); font-size: var(--fs-sm); margin: 0; }
+
+.notif_alerta { border-left: 3px solid var(--aviso); }
+.notif_info { border-left: 3px solid var(--info); }
+.notif_peligro { border-left: 3px solid var(--peligro); }
+
+
+/* =============================================
+   37. BREADCRUMBS
+   ============================================= */
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
+    font-size: var(--fs-sm);
+    color: var(--texto-secundario);
+    margin-bottom: var(--gap-lg);
+    padding: var(--gap-sm) 0;
+}
+
+.breadcrumbs a {
+    color: var(--primario);
+    text-decoration: none;
+    transition: color var(--trans);
+}
+
+.breadcrumbs a:hover { color: var(--primario-hover); text-decoration: underline; }
+.breadcrumbs .breadcrumb_sep { color: var(--texto-claro); margin: 0 2px; }
+.breadcrumbs .breadcrumb_actual { color: var(--texto); font-weight: 600; }
+
+
+/* =============================================
+   38. PAGINACIÓN
+   ============================================= */
+.paginacion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-xs);
+    padding: var(--gap-lg) 0 var(--gap-md);
+}
+
+.paginacion a,
+.paginacion span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 var(--gap-sm);
+    border-radius: var(--radio-sm);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all var(--trans);
+}
+
+.paginacion a {
+    color: var(--texto-secundario);
+    background: var(--fondo-tarjeta);
+    border: 1px solid var(--borde);
+}
+
+.paginacion a:hover {
+    color: var(--primario);
+    border-color: var(--primario);
+    background: var(--primario-light);
+}
+
+.paginacion .pag_actual {
+    background: var(--primario);
+    color: var(--texto-invertido);
+    border: 1px solid var(--primario);
+    font-weight: 700;
+}
+
+.paginacion .pag_deshabilitado {
+    color: var(--texto-claro);
+    background: var(--fondo-elevado);
+    border: 1px solid var(--borde);
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+
+/* =============================================
+   39. TABLAS ORDENABLES
+   ============================================= */
+.th_ordenable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    position: relative;
+    padding-right: 20px !important;
+}
+
+.th_ordenable::after {
+    content: '⇅';
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--fs-xs);
+    color: var(--texto-claro);
+    transition: color var(--trans);
+}
+
+.th_ordenable:hover::after { color: var(--primario); }
+.th_ordenable.asc::after { content: '▲'; color: var(--primario); }
+.th_ordenable.desc::after { content: '▼'; color: var(--primario); }
+
+
+/* =============================================
+   40. BOTÓN EXPORTAR CSV
+   ============================================= */
+.btn_exportar {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-sm);
+    padding: var(--gap-sm) var(--gap-base);
+    background: var(--acento);
+    color: var(--texto-invertido);
+    border: none;
+    border-radius: var(--radio-sm);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--trans);
+    text-decoration: none;
+}
+
+.btn_exportar:hover {
+    background: var(--exito-hover);
+    box-shadow: var(--sombra-sm);
+}
+
+.barra_acciones_tabla {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--gap-md);
+    flex-wrap: wrap;
+    gap: var(--gap-sm);
+}
+
+
+/* =============================================
+   41. MODAL MEJORADO
+   ============================================= */
+.modal_header_dialog {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-sm);
+    margin-bottom: var(--gap-base);
+}
+
+.modal_icono_dialog {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.modal_header_dialog h3 {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    color: var(--texto);
+    margin: 0;
+}
+
+.modal_mensaje {
+    color: var(--texto-secundario);
+    font-size: var(--fs-base);
+    line-height: 1.6;
+    margin-bottom: var(--gap-xl);
+}
+
+
+/* =============================================
+   42. VALIDACIÓN DE FORMULARIOS
+   ============================================= */
+.campo_invalido {
+    border-color: var(--peligro) !important;
+    box-shadow: 0 0 0 3px var(--peligro-light) !important;
+}
+
+.campo_valido {
+    border-color: var(--exito) !important;
+    box-shadow: 0 0 0 3px var(--exito-light) !important;
+}
+
+.error_campo {
+    color: var(--peligro);
+    font-size: var(--fs-xs);
+    margin-top: 2px;
+    display: block;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* =============================================
+   43. GRÁFICOS CHART.JS
+   ============================================= */
+.grafico_contenedor {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin: var(--gap-md) 0;
+    padding: var(--gap-md);
+    background: var(--fondo-tarjeta);
+    border-radius: var(--radio-md);
+    border: 1px solid var(--borde);
+}
+
+.grafico_contenedor canvas {
+    width: 100% !important;
+    max-height: 300px;
+}
+
+.graficos_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: var(--gap-lg);
+    margin: var(--gap-lg) 0;
+}
+
+.grafico_titulo {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    color: var(--texto);
+    margin-bottom: var(--gap-sm);
+}
+
+
+/* =============================================
+   44. HISTORIAL DE ACTIVIDAD
+   ============================================= */
+.actividad_lista {
+    list-style: none;
+}
+
+.actividad_item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-md);
+    padding: var(--gap-md) var(--gap-base);
+    border-bottom: 1px solid var(--borde);
+    transition: background var(--trans);
+}
+
+.actividad_item:hover { background: var(--fondo-hover); }
+
+.actividad_icono {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.actividad_icono.crear { background: var(--exito-light); }
+.actividad_icono.editar { background: var(--aviso-light); }
+.actividad_icono.eliminar { background: var(--peligro-light); }
+.actividad_icono.ver { background: var(--info-light); }
+.actividad_icono.mover { background: var(--primario-light); }
+
+.actividad_info { flex: 1; min-width: 0; }
+.actividad_accion { font-weight: 600; color: var(--texto); font-size: var(--fs-base); }
+.actividad_descripcion { color: var(--texto-secundario); font-size: var(--fs-sm); margin-top: 2px; }
+.actividad_meta { font-size: var(--fs-xs); color: var(--texto-claro); margin-top: 4px; }
+
+.actividad_filtros {
+    display: flex;
+    gap: var(--gap-sm);
+    margin-bottom: var(--gap-lg);
+    flex-wrap: wrap;
+}
+
+
+/* =============================================
+   45. RESPONSIVE V0.0.27
+   ============================================= */
+@media (max-width: 992px) {
+    .graficos_grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .menu_lateral {
+        position: fixed;
+        z-index: 999;
+        left: -260px;
+        top: 0;
+        transition: left var(--trans-slow);
+    }
+    .menu_lateral.sidebar_movil_abierto { left: 0; }
+    .btn_colapsar_sidebar { display: flex; }
+    .barra_acciones_tabla { flex-direction: column; align-items: stretch; }
+    .paginacion { flex-wrap: wrap; }
+    .breadcrumbs { font-size: var(--fs-xs); }
+    .graficos_grid { grid-template-columns: 1fr; }
+    .grafico_contenedor canvas { max-height: 220px; }
 }

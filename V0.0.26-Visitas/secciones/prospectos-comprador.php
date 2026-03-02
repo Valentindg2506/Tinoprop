@@ -143,6 +143,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash_set('success', 'Prospecto eliminado correctamente.');
     }
 
+    if (isset($_POST['convertir_a_cliente'])) {
+        // Convierte un prospecto "realizado" en un cliente comprador.
+        $id_conv = (int) ($_POST['id'] ?? 0);
+        if ($id_conv > 0) {
+            $stmt = $pdo->prepare('SELECT nombre, telefono, interes FROM prospectos WHERE id = :id AND tipo = :tipo');
+            $stmt->execute(['id' => $id_conv, 'tipo' => 'comprador']);
+            $p = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($p) {
+                $partes = explode(' ', $p['nombre'], 2);
+                $nombre_c = $partes[0];
+                $apellido_c = $partes[1] ?? '';
+                $stmt2 = $pdo->prepare(
+                    'INSERT INTO clientes (tipo, nombre, apellido, telefono, email, operacion)
+                     VALUES (:tipo, :nombre, :apellido, :telefono, :email, :operacion)'
+                );
+                $stmt2->execute([
+                    'tipo' => 'comprador',
+                    'nombre' => $nombre_c,
+                    'apellido' => $apellido_c,
+                    'telefono' => $p['telefono'],
+                    'email' => '',
+                    'operacion' => 'Compra',
+                ]);
+                flash_set('success', 'Prospecto convertido a cliente correctamente. Puedes completar sus datos en la sección Clientes.');
+            } else {
+                flash_set('error', 'No se encontró el prospecto.');
+            }
+        }
+    }
+
     header('Location: index.php?seccion=' . $origen);
     exit;
 }
@@ -230,7 +260,12 @@ $prospectos_db = $stmt->fetchAll();
                             <span>📞 <?php echo e($prospecto['telefono']); ?></span>
                         </div>
                         <div class="acciones_tarjeta">
-                            <button title="Mover">➜</button>
+                            <?php if ($prospecto['estado'] === 'realizado'): ?>
+                            <form method="POST" data-confirm="¿Convertir este prospecto en cliente comprador?">
+                                <input type="hidden" name="id" value="<?php echo $prospecto['id']; ?>">
+                                <button type="submit" name="convertir_a_cliente" class="btn_guardar btn_chico">👤 A cliente</button>
+                            </form>
+                            <?php endif; ?>
                             <form method="POST" data-confirm="¿Eliminar este prospecto? Esta accion no se puede deshacer.">
                                 <input type="hidden" name="id" value="<?php echo $prospecto['id']; ?>">
                                 <button type="submit" name="eliminar_prospecto" class="btn_peligro">Eliminar</button>

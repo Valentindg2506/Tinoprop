@@ -1,7 +1,7 @@
 <?php
 /*
- * Sección: Visitas (Vendedor)
- * Rol: tabla para control de visitas a propiedades del equipo vendedor.
+ * Sección: Visitas (Comprador)
+ * Rol: tabla para control de visitas a propiedades del equipo comprador.
  * Sincronización bidireccional con recordatorios:
  * - Al crear visita aquí → se crea recordatorio automático en el calendario.
  * - Al crear recordatorio tipo "Visita" → se crea entrada en esta tabla.
@@ -10,7 +10,16 @@
 require_once __DIR__ . '/../inc/bootstrap.php';
 
 $pdo = db();
-$origen = 'visitas-vendedor';
+
+if (isset($_GET['exportar']) && $_GET['exportar'] === 'csv') {
+    visitas_asegurar_tabla($pdo);
+    $uid = (int)($_SESSION['usuario']['id'] ?? 0);
+    $stmt = $pdo->prepare('SELECT v.*, p.titulo AS propiedad, c.nombre AS cliente_nombre, c.apellido AS cliente_apellido FROM visitas v LEFT JOIN propiedades p ON v.propiedad_id = p.id LEFT JOIN clientes c ON v.cliente_id = c.id WHERE v.usuario_id = :uid AND v.equipo = "comprador" ORDER BY v.id DESC');
+    $stmt->execute(['uid' => $uid]);
+    exportar_csv($stmt->fetchAll(PDO::FETCH_ASSOC), 'visitas_comprador.csv');
+}
+
+$origen = 'visitas-comprador';
 $mensaje_error = flash_get('error');
 $mensaje_exito = flash_get('success');
 
@@ -18,6 +27,12 @@ $estados_visita = ['pendiente', 'realizada', 'cancelada'];
 
 // Controlador POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_verify($_POST['_token'] ?? '')) {
+        flash_set('error', 'Token de seguridad inválido.');
+        header('Location: index.php?seccion=visitas-comprador');
+        exit;
+    }
+
     if (isset($_POST['crear_visita'])) {
         $errores = [];
         $propiedad_id = (int) ($_POST['propiedad_id'] ?? 0);
@@ -36,9 +51,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $id = visita_crear($pdo, 'vendedor', $propiedad_id ?: null, $cliente_id ?: null, $fecha, $hora, $observaciones, true);
+        $id = visita_crear($pdo, 'comprador', $propiedad_id ?: null, $cliente_id ?: null, $fecha, $hora, $observaciones, true);
 
         if ($id) {
+            actividad_registrar($pdo, 'crear_visita_comprador', 'Visita comprador #' . $id . ' creada');
             flash_set('success', 'Visita creada correctamente y añadida al calendario de recordatorios.');
         } else {
             flash_set('error', 'Error al crear la visita.');
@@ -77,6 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
             $ok = visita_eliminar($pdo, $id_eliminar, true);
+            if ($ok) {
+                actividad_registrar($pdo, 'eliminar_visita_comprador', 'Visita comprador #' . $id_eliminar . ' eliminada');
+            }
             flash_set($ok ? 'success' : 'error', $ok ? 'Visita eliminada correctamente.' : 'Error al eliminar.');
         }
     }
@@ -92,21 +111,20 @@ if (!in_array($filtro, ['todos', 'pendiente', 'realizada', 'cancelada'])) {
 }
 
 // Listado de visitas
-$visitas = visitas_listar($pdo, 'vendedor', $filtro);
+$visitas = visitas_listar($pdo, 'comprador', $filtro);
 
-// Propiedades del equipo vendedor para el select
+// Propiedades del equipo comprador para el select
 $stmt = $pdo->prepare('SELECT id, titulo, referencia FROM propiedades WHERE equipo = :equipo ORDER BY titulo ASC');
-$stmt->execute(['equipo' => 'vendedor']);
+$stmt->execute(['equipo' => 'comprador']);
 $propiedades_list = $stmt->fetchAll();
 
-// Clientes vendedor para el select
+// Clientes comprador para el select
 $stmt = $pdo->prepare('SELECT id, nombre, apellido FROM clientes WHERE tipo = :tipo ORDER BY nombre ASC');
-$stmt->execute(['tipo' => 'vendedor']);
+$stmt->execute(['tipo' => 'comprador']);
 $clientes_list = $stmt->fetchAll();
 ?>
 
 <div class="encabezado_seccion">
-    <h2>📋 Visitas - Vendedor</h2>
     <div class="acciones_dashboard">
         <a href="#nueva-visita" class="btn_nuevo_cliente">+ Nueva Visita</a>
     </div>
@@ -125,7 +143,8 @@ $clientes_list = $stmt->fetchAll();
     <p class="config_hint">
         ℹ️ Al crear una visita se añadirá automáticamente un recordatorio en el calendario.
     </p>
-    <form method="POST" class="form_grid">
+    <form method="POST" class="form_grid" data-validar>
+        <?php echo csrf_field(); ?>
         <div class="campo_input">
             <label for="propiedad_id">Propiedad</label>
             <select id="propiedad_id" name="propiedad_id">
@@ -175,6 +194,10 @@ $clientes_list = $stmt->fetchAll();
 </div>
 
 <!-- Tabla de visitas -->
+<div class="barra_acciones_tabla">
+    <span>Visitas comprador</span>
+    <a href="index.php?seccion=visitas-comprador&exportar=csv" class="btn_exportar">📥 Exportar CSV</a>
+</div>
 <div class="contenedor_tabla">
     <?php if (empty($visitas)): ?>
         <p class="sin_recordatorios">No hay visitas <?php echo $filtro !== 'todos' ? 'con estado "' . $filtro . '"' : 'registradas'; ?>.</p>
@@ -182,12 +205,12 @@ $clientes_list = $stmt->fetchAll();
     <table class="tabla_datos tabla_visitas">
         <thead>
             <tr>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Propiedad</th>
-                <th>Cliente</th>
-                <th>Estado</th>
-                <th>Observaciones</th>
+                <th class="th_ordenable">Fecha</th>
+                <th class="th_ordenable">Hora</th>
+                <th class="th_ordenable">Propiedad</th>
+                <th class="th_ordenable">Cliente</th>
+                <th class="th_ordenable">Estado</th>
+                <th class="th_ordenable">Observaciones</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -233,6 +256,7 @@ $clientes_list = $stmt->fetchAll();
                 </td>
                 <td>
                     <form method="POST" class="form_inline">
+                        <?php echo csrf_field(); ?>
                         <input type="hidden" name="id" value="<?php echo $v['id']; ?>">
                         <select name="estado" onchange="this.form.submit()" class="select_estado select_estado_<?php echo e($v['estado']); ?>">
                             <?php foreach ($estados_visita as $est): ?>
@@ -253,6 +277,7 @@ $clientes_list = $stmt->fetchAll();
                             <summary class="btn_icono btn_icono_editar" title="Editar">✏️</summary>
                             <div class="form_editar_visita">
                                 <form method="POST" class="form_grid">
+                                    <?php echo csrf_field(); ?>
                                     <input type="hidden" name="id" value="<?php echo $v['id']; ?>">
                                     <div class="campo_input">
                                         <label>Propiedad</label>
@@ -303,6 +328,7 @@ $clientes_list = $stmt->fetchAll();
                             </div>
                         </details>
                         <form method="POST" data-confirm="¿Eliminar esta visita y su recordatorio asociado? Esta accion no se puede deshacer.">
+                            <?php echo csrf_field(); ?>
                             <input type="hidden" name="id" value="<?php echo $v['id']; ?>">
                             <button type="submit" name="eliminar_visita" class="btn_icono btn_icono_eliminar" title="Eliminar">🗑️</button>
                         </form>

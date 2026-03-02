@@ -9,6 +9,12 @@
  * 4) CRUD de recordatorios.
  * 5) Gestión de imágenes de propiedades.
  * 6) Creación/ajuste de la tabla de propiedades scrapeadas.
+ * 7) CSRF tokens.
+ * 8) Historial de actividad (log).
+ * 9) Notificaciones inteligentes.
+ * 10) Caché de consultas.
+ * 11) Exportación CSV.
+ * 12) Breadcrumbs.
  */
 
 /* Escapa texto para mostrarlo en HTML sin ejecutar contenido peligroso. */
@@ -1035,4 +1041,336 @@ function oferta_eliminar(PDO $pdo, int $id): bool
     $resultado = $stmt->execute(['id' => $id, 'uid' => $usuario_id]);
 
     return $resultado && $stmt->rowCount() > 0;
+}
+
+
+/* =============================================
+   7. CSRF TOKENS — Protección contra ataques CSRF
+   ============================================= */
+
+function csrf_token(): string
+{
+    if (empty($_SESSION['_csrf_token'])) {
+        $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['_csrf_token'];
+}
+
+function csrf_field(): string
+{
+    return '<input type="hidden" name="_csrf_token" value="' . e(csrf_token()) . '">';
+}
+
+function csrf_verify(): bool
+{
+    $token = $_POST['_csrf_token'] ?? '';
+    if (empty($token) || empty($_SESSION['_csrf_token'])) return false;
+    return hash_equals($_SESSION['_csrf_token'], $token);
+}
+
+
+/* =============================================
+   8. HISTORIAL DE ACTIVIDAD
+   ============================================= */
+
+function actividad_asegurar_tabla(PDO $pdo): void
+{
+    static $ok = false;
+    if ($ok) return;
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS actividad_log (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            usuario_id INT UNSIGNED NOT NULL,
+            usuario_nombre VARCHAR(100) DEFAULT NULL,
+            accion VARCHAR(50) NOT NULL,
+            entidad VARCHAR(50) NOT NULL,
+            entidad_id INT UNSIGNED DEFAULT NULL,
+            descripcion TEXT DEFAULT NULL,
+            datos_extra JSON DEFAULT NULL,
+            ip VARCHAR(45) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_act_usr (usuario_id),
+            INDEX idx_act_ent (entidad, entidad_id),
+            INDEX idx_act_fecha (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+    $ok = true;
+}
+
+function actividad_registrar(PDO $pdo, string $accion, string $entidad, ?int $entidad_id = null, string $descripcion = '', array $datos_extra = []): void
+{
+    $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
+    $nombre = $_SESSION['usuario']['nombre'] ?? 'Sistema';
+    if ($uid <= 0) return;
+    actividad_asegurar_tabla($pdo);
+    $stmt = $pdo->prepare(
+        'INSERT INTO actividad_log (usuario_id, usuario_nombre, accion, entidad, entidad_id, descripcion, datos_extra, ip)
+         VALUES (:uid, :nombre, :accion, :entidad, :eid, :desc, :datos, :ip)'
+    );
+    $stmt->execute([
+        'uid' => $uid, 'nombre' => $nombre, 'accion' => $accion,
+        'entidad' => $entidad, 'eid' => $entidad_id, 'desc' => $descripcion,
+        'datos' => !empty($datos_extra) ? json_encode($datos_extra) : null,
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
+    ]);
+}
+
+function actividad_listar(PDO $pdo, int $limite = 20, int $offset = 0): array
+{
+    actividad_asegurar_tabla($pdo);
+    $stmt = $pdo->prepare('SELECT * FROM actividad_log ORDER BY created_at DESC LIMIT :lim OFFSET :off');
+    $stmt->bindValue('lim', $limite, PDO::PARAM_INT);
+    $stmt->bindValue('off', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
+
+function actividad_contar(PDO $pdo): int
+{
+    actividad_asegurar_tabla($pdo);
+    return (int) $pdo->query('SELECT COUNT(*) FROM actividad_log')->fetchColumn();
+}
+
+
+/* =============================================
+   9. NOTIFICACIONES INTELIGENTES
+   ============================================= */
+
+function notificaciones_generar(PDO $pdo): array
+{
+    $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
+    if ($uid <= 0) return [];
+    $notifs = [];
+
+    try {
+        visitas_asegurar_tabla($pdo);
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM visitas WHERE fecha_visita = CURDATE() AND estado = "pendiente" AND usuario_id = :uid');
+        $stmt->execute(['uid' => $uid]);
+        $n = (int) $stmt->fetchColumn();
+        if ($n > 0) $notifs[] = ['tipo' => 'info', 'icono' => '📅', 'texto' => "Tienes {$n} visita(s) hoy", 'enlace' => '?seccion=visitas-vendedor'];
+    } catch (PDOException $e) {}
+
+    try {
+        ofertas_asegurar_tabla($pdo);
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM ofertas WHERE estado = "pendiente" AND fecha_oferta < DATE_SUB(CURDATE(), INTERVAL 5 DAY) AND usuario_id = :uid');
+        $stmt->execute(['uid' => $uid]);
+        $n = (int) $stmt->fetchColumn();
+        if ($n > 0) $notifs[] = ['tipo' => 'aviso', 'icono' => '⚠️', 'texto' => "{$n} oferta(s) pendiente(s) hace +5 días", 'enlace' => '?seccion=ofertas-vendedor'];
+    } catch (PDOException $e) {}
+
+    try {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM prospectos WHERE estado = "nuevo" AND created_at < DATE_SUB(NOW(), INTERVAL 14 DAY)');
+        $stmt->execute();
+        $n = (int) $stmt->fetchColumn();
+        if ($n > 0) $notifs[] = ['tipo' => 'aviso', 'icono' => '👤', 'texto' => "{$n} prospecto(s) sin contactar hace +2 semanas", 'enlace' => '?seccion=prospectos-vendedor'];
+    } catch (PDOException $e) {}
+
+    try {
+        recordatorios_asegurar_tabla($pdo);
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM recordatorios WHERE fecha_recordatorio = CURDATE() AND estado = "pendiente" AND usuario_id = :uid');
+        $stmt->execute(['uid' => $uid]);
+        $n = (int) $stmt->fetchColumn();
+        if ($n > 0) $notifs[] = ['tipo' => 'info', 'icono' => '🔔', 'texto' => "{$n} recordatorio(s) para hoy", 'enlace' => '?seccion=recordatorios'];
+    } catch (PDOException $e) {}
+
+    try {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM recordatorios WHERE fecha_recordatorio < CURDATE() AND estado = "pendiente" AND usuario_id = :uid');
+        $stmt->execute(['uid' => $uid]);
+        $n = (int) $stmt->fetchColumn();
+        if ($n > 0) $notifs[] = ['tipo' => 'peligro', 'icono' => '🚨', 'texto' => "{$n} recordatorio(s) atrasado(s)", 'enlace' => '?seccion=recordatorios'];
+    } catch (PDOException $e) {}
+
+    return $notifs;
+}
+
+
+/* =============================================
+   10. CACHÉ DE CONSULTAS
+   ============================================= */
+
+function cache_get(string $clave, int $ttl = 60): mixed
+{
+    if (!isset($_SESSION['_cache'][$clave])) return null;
+    $e = $_SESSION['_cache'][$clave];
+    if (time() - $e['ts'] > $ttl) { unset($_SESSION['_cache'][$clave]); return null; }
+    return $e['valor'];
+}
+
+function cache_set(string $clave, mixed $valor): void
+{
+    $_SESSION['_cache'][$clave] = ['valor' => $valor, 'ts' => time()];
+}
+
+function cache_flush(): void { $_SESSION['_cache'] = []; }
+
+
+/* =============================================
+   11. EXPORTACIÓN CSV
+   ============================================= */
+
+function exportar_csv(array $datos, string $nombre = 'export.csv'): void
+{
+    if (empty($datos)) { header('Content-Type: text/plain'); echo 'Sin datos.'; exit; }
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $nombre . '"');
+    $out = fopen('php://output', 'w');
+    fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+    fputcsv($out, array_keys($datos[0]), ';');
+    foreach ($datos as $fila) fputcsv($out, $fila, ';');
+    fclose($out);
+    exit;
+}
+
+
+/* =============================================
+   12. BREADCRUMBS
+   ============================================= */
+
+function generar_breadcrumbs(string $seccion): array
+{
+    $migas = [['titulo' => 'Inicio', 'url' => '?seccion=dashboard']];
+    $mapa = [
+        'dashboard'             => [['titulo' => 'Dashboard']],
+        'recordatorios'         => [['titulo' => 'Recordatorios']],
+        'documentacion'         => [['titulo' => 'Documentación']],
+        'configuracion'         => [['titulo' => 'Sistema'], ['titulo' => 'Configuración']],
+        'clientes-vendedor'     => [['titulo' => 'Vendedor'], ['titulo' => 'Clientes']],
+        'clientes-comprador'    => [['titulo' => 'Comprador'], ['titulo' => 'Clientes']],
+        'prospectos-vendedor'   => [['titulo' => 'Vendedor'], ['titulo' => 'Prospectos']],
+        'prospectos-comprador'  => [['titulo' => 'Comprador'], ['titulo' => 'Prospectos']],
+        'propiedades-vendedor'  => [['titulo' => 'Vendedor'], ['titulo' => 'Propiedades']],
+        'propiedades-comprador' => [['titulo' => 'Comprador'], ['titulo' => 'Propiedades']],
+        'alquileres-vendedor'   => [['titulo' => 'Vendedor'], ['titulo' => 'Alquileres']],
+        'alquileres-comprador'  => [['titulo' => 'Comprador'], ['titulo' => 'Alquileres']],
+        'busqueda-avanzada'     => [['titulo' => 'Búsqueda Avanzada']],
+        'proceso-vendedor'      => [['titulo' => 'Vendedor'], ['titulo' => 'Proceso']],
+        'proceso-comprador'     => [['titulo' => 'Comprador'], ['titulo' => 'Proceso']],
+        'visitas-vendedor'      => [['titulo' => 'Vendedor'], ['titulo' => 'Visitas']],
+        'visitas-comprador'     => [['titulo' => 'Comprador'], ['titulo' => 'Visitas']],
+        'ofertas-vendedor'      => [['titulo' => 'Vendedor'], ['titulo' => 'Ofertas']],
+        'ver_propiedad'         => [['titulo' => 'Propiedades'], ['titulo' => 'Detalle']],
+        'ver_cliente'           => [['titulo' => 'Clientes'], ['titulo' => 'Detalle']],
+        'actividad'             => [['titulo' => 'Sistema'], ['titulo' => 'Historial']],
+    ];
+    if (isset($mapa[$seccion])) foreach ($mapa[$seccion] as $m) $migas[] = $m;
+    return $migas;
+}
+
+function renderizar_breadcrumbs(string $seccion): string
+{
+    $migas = generar_breadcrumbs($seccion);
+    $html = '<nav class="breadcrumbs" aria-label="Navegación"><ol>';
+    $total = count($migas);
+    foreach ($migas as $i => $m) {
+        if ($i === $total - 1) {
+            $html .= '<li class="breadcrumb_actual" aria-current="page">' . e($m['titulo']) . '</li>';
+        } elseif (!empty($m['url'])) {
+            $html .= '<li><a href="' . e($m['url']) . '">' . e($m['titulo']) . '</a></li>';
+        } else {
+            $html .= '<li>' . e($m['titulo']) . '</li>';
+        }
+    }
+    $html .= '</ol></nav>';
+    return $html;
+}
+
+
+/* =============================================
+   13. PAGINACIÓN
+   ============================================= */
+
+function paginar(int $total, int $por_pagina = 15, int $pagina_actual = 1): array
+{
+    $total_pag = max(1, (int) ceil($total / $por_pagina));
+    $pagina_actual = max(1, min($pagina_actual, $total_pag));
+    return [
+        'total' => $total, 'por_pagina' => $por_pagina,
+        'pagina_actual' => $pagina_actual, 'total_paginas' => $total_pag,
+        'offset' => ($pagina_actual - 1) * $por_pagina,
+        'tiene_anterior' => $pagina_actual > 1,
+        'tiene_siguiente' => $pagina_actual < $total_pag,
+    ];
+}
+
+function renderizar_paginacion(array $pag, string $base_url): string
+{
+    if ($pag['total_paginas'] <= 1) return '';
+    $sep = str_contains($base_url, '?') ? '&' : '?';
+    $html = '<nav class="paginacion"><ul>';
+    if ($pag['tiene_anterior']) {
+        $html .= '<li><a href="' . e($base_url . $sep . 'pagina=' . ($pag['pagina_actual'] - 1)) . '" class="pag_btn">← Anterior</a></li>';
+    } else {
+        $html .= '<li><span class="pag_btn pag_disabled">← Anterior</span></li>';
+    }
+    $rango = 2;
+    $inicio = max(1, $pag['pagina_actual'] - $rango);
+    $fin = min($pag['total_paginas'], $pag['pagina_actual'] + $rango);
+    if ($inicio > 1) {
+        $html .= '<li><a href="' . e($base_url . $sep . 'pagina=1') . '" class="pag_btn">1</a></li>';
+        if ($inicio > 2) $html .= '<li><span class="pag_dots">…</span></li>';
+    }
+    for ($p = $inicio; $p <= $fin; $p++) {
+        $html .= ($p === $pag['pagina_actual'])
+            ? '<li><span class="pag_btn pag_activa">' . $p . '</span></li>'
+            : '<li><a href="' . e($base_url . $sep . 'pagina=' . $p) . '" class="pag_btn">' . $p . '</a></li>';
+    }
+    if ($fin < $pag['total_paginas']) {
+        if ($fin < $pag['total_paginas'] - 1) $html .= '<li><span class="pag_dots">…</span></li>';
+        $html .= '<li><a href="' . e($base_url . $sep . 'pagina=' . $pag['total_paginas']) . '" class="pag_btn">' . $pag['total_paginas'] . '</a></li>';
+    }
+    if ($pag['tiene_siguiente']) {
+        $html .= '<li><a href="' . e($base_url . $sep . 'pagina=' . ($pag['pagina_actual'] + 1)) . '" class="pag_btn">Siguiente →</a></li>';
+    } else {
+        $html .= '<li><span class="pag_btn pag_disabled">Siguiente →</span></li>';
+    }
+    $html .= '</ul></nav>';
+    $html .= '<p class="pag_info">Página ' . $pag['pagina_actual'] . ' de ' . $pag['total_paginas'] . ' (' . $pag['total'] . ' registros)</p>';
+    return $html;
+}
+
+
+/* =============================================
+   14. BÚSQUEDA GLOBAL
+   ============================================= */
+
+function busqueda_global(PDO $pdo, string $termino, int $limite = 10): array
+{
+    $resultados = [];
+    $like = '%' . $termino . '%';
+
+    $stmt = $pdo->prepare('SELECT id, nombre, apellido, telefono, email, tipo FROM clientes WHERE nombre LIKE :q OR apellido LIKE :q2 OR email LIKE :q3 OR telefono LIKE :q4 LIMIT :lim');
+    $stmt->bindValue('q', $like); $stmt->bindValue('q2', $like);
+    $stmt->bindValue('q3', $like); $stmt->bindValue('q4', $like);
+    $stmt->bindValue('lim', $limite, PDO::PARAM_INT);
+    $stmt->execute();
+    foreach ($stmt->fetchAll() as $r) {
+        $resultados[] = ['tipo' => 'cliente', 'icono' => '👤', 'titulo' => $r['nombre'] . ' ' . $r['apellido'],
+            'detalle' => $r['email'] . ' · ' . $r['telefono'],
+            'url' => 'index.php?seccion=ver_cliente&id=' . $r['id'] . '&origen=clientes-' . $r['tipo']];
+    }
+
+    $stmt = $pdo->prepare('SELECT id, titulo, ubicacion, referencia, operacion, equipo FROM propiedades WHERE titulo LIKE :q OR ubicacion LIKE :q2 OR referencia LIKE :q3 OR direccion LIKE :q4 LIMIT :lim');
+    $stmt->bindValue('q', $like); $stmt->bindValue('q2', $like);
+    $stmt->bindValue('q3', $like); $stmt->bindValue('q4', $like);
+    $stmt->bindValue('lim', $limite, PDO::PARAM_INT);
+    $stmt->execute();
+    foreach ($stmt->fetchAll() as $r) {
+        $origen = obtener_origen_propiedad($r['operacion'], $r['equipo']);
+        $resultados[] = ['tipo' => 'propiedad', 'icono' => '🏠', 'titulo' => $r['titulo'],
+            'detalle' => $r['ubicacion'] . ($r['referencia'] ? ' · ' . $r['referencia'] : ''),
+            'url' => 'index.php?seccion=ver_propiedad&id=' . $r['id'] . '&origen=' . $origen];
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT id, nombre, telefono, tipo FROM prospectos WHERE nombre LIKE :q OR telefono LIKE :q2 LIMIT :lim');
+        $stmt->bindValue('q', $like); $stmt->bindValue('q2', $like);
+        $stmt->bindValue('lim', $limite, PDO::PARAM_INT);
+        $stmt->execute();
+        foreach ($stmt->fetchAll() as $r) {
+            $resultados[] = ['tipo' => 'prospecto', 'icono' => '📊', 'titulo' => $r['nombre'],
+                'detalle' => $r['telefono'] ?? '', 'url' => 'index.php?seccion=prospectos-' . $r['tipo']];
+        }
+    } catch (PDOException $e) {}
+
+    return $resultados;
 }
