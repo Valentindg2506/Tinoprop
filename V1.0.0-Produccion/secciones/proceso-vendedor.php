@@ -43,12 +43,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $stmt = $pdo->prepare('UPDATE proceso_propiedades SET etapa = :etapa WHERE id = :id AND equipo = :equipo' . sql_iid());
+        $stmt = $pdo->prepare('UPDATE proceso_propiedades SET etapa = :etapa WHERE id = :id AND equipo = :equipo' . sql_iid() . sql_uid());
         $stmt->execute([
             'etapa' => $etapa,
             'id'    => $id_mover,
             'equipo' => 'vendedor',
-        ] + sql_iid_params());
+        ] + sql_iid_params() + sql_uid_params());
 
         echo json_encode(['ok' => true]);
         exit;
@@ -93,8 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO proceso_propiedades (propiedad_id, equipo, etapa, notas, inmobiliaria_id)
-             VALUES (:propiedad_id, :equipo, :etapa, :notas, :iid)'
+            'INSERT INTO proceso_propiedades (propiedad_id, equipo, etapa, notas, inmobiliaria_id, usuario_id)
+             VALUES (:propiedad_id, :equipo, :etapa, :notas, :iid, :uid)'
         );
         $stmt->execute([
             'propiedad_id' => $propiedad_id,
@@ -102,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'etapa'        => $etapa,
             'notas'        => $notas,
             'iid'          => usuario_inmobiliaria_id(),
+            'uid'          => (int) ($_SESSION['usuario']['id'] ?? 0),
         ]);
         flash_set('success', 'Proceso creado correctamente.');
     }
@@ -125,14 +126,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $stmt = $pdo->prepare(
-                'UPDATE proceso_propiedades SET etapa = :etapa, notas = :notas WHERE id = :id AND equipo = :equipo' . sql_iid()
+                'UPDATE proceso_propiedades SET etapa = :etapa, notas = :notas WHERE id = :id AND equipo = :equipo' . sql_iid() . sql_uid()
             );
             $stmt->execute([
                 'etapa'  => $etapa,
                 'notas'  => $notas,
                 'id'     => $id_editar,
                 'equipo' => 'vendedor',
-            ] + sql_iid_params());
+            ] + sql_iid_params() + sql_uid_params());
             flash_set('success', 'Proceso actualizado correctamente.');
         }
     }
@@ -141,8 +142,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Eliminación definitiva del proceso.
         $id_eliminar = (int) ($_POST['id'] ?? 0);
         if ($id_eliminar > 0) {
-            $stmt = $pdo->prepare('DELETE FROM proceso_propiedades WHERE id = :id AND equipo = :equipo' . sql_iid());
-            $stmt->execute(['id' => $id_eliminar, 'equipo' => 'vendedor'] + sql_iid_params());
+            $stmt = $pdo->prepare('DELETE FROM proceso_propiedades WHERE id = :id AND equipo = :equipo' . sql_iid() . sql_uid());
+            $stmt->execute(['id' => $id_eliminar, 'equipo' => 'vendedor'] + sql_iid_params() + sql_uid_params());
         }
         flash_set('success', 'Proceso eliminado correctamente.');
     }
@@ -157,10 +158,10 @@ $stmt = $pdo->prepare(
             p.titulo, p.tipo, p.ubicacion, p.precio, p.moneda, p.estado AS estado_propiedad, p.referencia
      FROM proceso_propiedades pp
      INNER JOIN propiedades p ON pp.propiedad_id = p.id
-     WHERE pp.equipo = :equipo' . sql_iid('pp') . '
+     WHERE pp.equipo = :equipo' . sql_iid('pp') . sql_uid('pp') . '
      ORDER BY pp.id DESC'
 );
-$stmt->execute(['equipo' => 'vendedor'] + sql_iid_params());
+$stmt->execute(['equipo' => 'vendedor'] + sql_iid_params() + sql_uid_params());
 $procesos_db = $stmt->fetchAll();
 
 // Propiedades disponibles para asignar un nuevo proceso (sin proceso asignado aún).

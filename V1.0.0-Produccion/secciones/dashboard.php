@@ -308,10 +308,10 @@ $stmt = $pdo->prepare(
      FROM notas n
      LEFT JOIN clientes c ON n.entity_type = 'cliente' AND n.entity_id = c.id
      LEFT JOIN propiedades p ON n.entity_type = 'propiedad' AND n.entity_id = p.id
-     WHERE n.tipo = 'Aviso'" . sql_iid('n') . "
+     WHERE n.tipo = 'Aviso'" . sql_iid('n') . sql_uid('n') . "
      ORDER BY n.created_at DESC LIMIT 5"
 );
-$stmt->execute(sql_iid_params());
+$stmt->execute(sql_iid_params() + sql_uid_params());
 $alertas = $stmt->fetchAll();
 
 // Actividad reciente: últimas notas/avisos con contexto y tiempo relativo.
@@ -324,10 +324,10 @@ $stmt = $pdo->prepare(
      FROM notas n
      LEFT JOIN clientes c ON n.entity_type = 'cliente' AND n.entity_id = c.id
      LEFT JOIN propiedades p ON n.entity_type = 'propiedad' AND n.entity_id = p.id
-     WHERE 1=1" . sql_iid('n') . "
+     WHERE 1=1" . sql_iid('n') . sql_uid('n') . "
      ORDER BY n.created_at DESC LIMIT 5"
 );
-$stmt->execute(sql_iid_params());
+$stmt->execute(sql_iid_params() + sql_uid_params());
 $actividad = $stmt->fetchAll();
 
 // Panel de propiedades destacadas (top por visitas reales).

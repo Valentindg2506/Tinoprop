@@ -96,6 +96,21 @@
     --gap-xl: 24px;
     --gap-2xl: 32px;
 
+    /* Alias — compatibilidad con componentes nuevos */
+    --bg-card: var(--fondo-tarjeta);
+    --bg-card-header: #f9fafb;
+    --bg-input: var(--fondo-input);
+    --bg-hover: var(--fondo-hover);
+    --color-primario: var(--primario);
+    --color-borde: var(--borde);
+    --color-texto-sec: var(--texto-secundario);
+    --text-primary: var(--texto);
+    --text-heading: var(--texto);
+    --text-secondary: var(--texto-secundario);
+    --accent: var(--acento);
+    --primary: var(--primario);
+    --radius: var(--radio-md);
+
     /* Transiciones */
     --trans: 0.2s ease;
     --trans-slow: 0.3s ease;
@@ -146,6 +161,21 @@ body.tema-oscuro {
     --sombra-md: 0 4px 6px rgba(0, 0, 0, 0.25);
     --sombra-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
     --sombra-xl: 0 20px 25px rgba(0, 0, 0, 0.35);
+
+    /* Alias — compatibilidad oscuro */
+    --bg-card: var(--fondo-tarjeta);
+    --bg-card-header: rgba(255, 255, 255, 0.06);
+    --bg-input: var(--fondo-input);
+    --bg-hover: var(--fondo-hover);
+    --color-primario: var(--primario);
+    --color-borde: var(--borde);
+    --color-texto-sec: var(--texto-secundario);
+    --text-primary: var(--texto);
+    --text-heading: var(--texto);
+    --text-secondary: var(--texto-secundario);
+    --accent: var(--acento);
+    --primary: var(--primario);
+    --radius: var(--radio-md);
 }
 
 /* Modo sistema: hereda preferencia del SO cuando no hay tema forzado */
@@ -189,6 +219,21 @@ body.tema-oscuro {
         --sombra-md: 0 4px 6px rgba(0, 0, 0, 0.25);
         --sombra-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
         --sombra-xl: 0 20px 25px rgba(0, 0, 0, 0.35);
+
+        /* Alias — compatibilidad oscuro sistema */
+        --bg-card: var(--fondo-tarjeta);
+        --bg-card-header: rgba(255, 255, 255, 0.06);
+        --bg-input: var(--fondo-input);
+        --bg-hover: var(--fondo-hover);
+        --color-primario: var(--primario);
+        --color-borde: var(--borde);
+        --color-texto-sec: var(--texto-secundario);
+        --text-primary: var(--texto);
+        --text-heading: var(--texto);
+        --text-secondary: var(--texto-secundario);
+        --accent: var(--acento);
+        --primary: var(--primario);
+        --radius: var(--radio-md);
     }
 }
 
@@ -6151,6 +6196,24 @@ select:disabled {
 }
 
 /* --- Post-venta Kanban enriquecido --- */
+.kanban_container {
+    display: flex;
+    gap: .75rem;
+    overflow-x: auto;
+    padding-bottom: .75rem;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+}
+.kanban_container .kanban_columna {
+    min-width: 220px;
+    flex: 1 1 0;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+}
+.kanban_container .kanban_items {
+    flex: 1;
+}
 .kanban_tarjeta--enriquecida {
     display: flex;
     flex-direction: column;
@@ -6221,6 +6284,16 @@ select:disabled {
     flex-direction: column;
     gap: .5rem;
     min-height: 60px;
+}
+
+/* Responsive: post-venta kanban horizontal → vertical en móvil */
+@media (max-width: 768px) {
+    .kanban_container {
+        flex-direction: column;
+    }
+    .kanban_container .kanban_columna {
+        min-width: 100%;
+    }
 }
 
 /* --- Modal sección (post-venta crear) --- */
@@ -6729,6 +6802,41 @@ select:disabled {
 .tema-oscuro .alerta_exito { background: rgba(34,197,94,.15); color: #4ade80; }
 .tema-oscuro .admin_alerta_item { color: #cbd5e1; }
 .tema-oscuro .admin_pet_form_acciones .campo_select { background: var(--bg-input, #1e293b); border-color: rgba(255,255,255,.12); color: #e2e8f0; }
+
+/* Dark mode: labels admin que usaban fallback claro */
+.tema-oscuro .admin_kpi_label,
+.tema-oscuro .admin_stat_label,
+.tema-oscuro .admin_total,
+.tema-oscuro .admin_info_label { color: #94a3b8; }
+
+/* Dark mode: kanban columna header */
+.tema-oscuro .kanban_columna_header { background: rgba(255,255,255,.06); }
+
+/* Dark mode: badges de estado con colores hardcoded */
+.tema-oscuro .badge_estado--pendiente,
+.tema-oscuro .badge_estado--media,
+.tema-oscuro .badge_estado--alquiler { background: rgba(59,130,246,.15); color: #60a5fa; }
+.tema-oscuro .badge_estado--baja { background: rgba(255,255,255,.08); color: #94a3b8; }
+
+/* Dark mode: timeline icono */
+.tema-oscuro .timeline_icono { background: #1e293b; border-color: rgba(255,255,255,.12); }
+
+/* Dark mode: modal cerrar y toggle vista */
+.tema-oscuro .modal_cerrar { color: #94a3b8; }
+.tema-oscuro .modal_cerrar:hover { color: #e2e8f0; }
+.tema-oscuro .btn_toggle_vista { border-color: rgba(255,255,255,.15); color: #94a3b8; }
+.tema-oscuro .btn_toggle_vista.activo { color: #e2e8f0; }
+
+/* Dark mode: legal */
+.tema-oscuro .legal_tabla_clave { color: #94a3b8; }
+.tema-oscuro .legal_tabla_valor { color: #cbd5e1; }
+.tema-oscuro .legal_tabla_fila { border-bottom-color: rgba(255,255,255,.06); }
+.tema-oscuro .legal_tabla_datos { background: rgba(255,255,255,.04); }
+.tema-oscuro .legal_accept_wrap { color: #94a3b8; }
+.tema-oscuro .legal_accept_wrap a { color: #60a5fa; }
+.tema-oscuro .legal_derecho p { color: #94a3b8; }
+.tema-oscuro .legal_tabla_formal th { background: rgba(59,130,246,.12); color: #e2e8f0; border-bottom-color: rgba(59,130,246,.2); }
+.tema-oscuro .legal_tabla_formal td { border-bottom-color: rgba(255,255,255,.06); color: #cbd5e1; }
 
 /* Responsive admin dashboard grids */
 @media (max-width: 640px) {

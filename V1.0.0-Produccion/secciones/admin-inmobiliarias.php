@@ -62,6 +62,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php?seccion=admin-inmobiliarias');
         exit;
     }
+
+    if (isset($_POST['eliminar_inmobiliaria'])) {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id > 0) {
+            $inmob = inmobiliaria_obtener($pdo, $id);
+            if ($inmob) {
+                $nombre = $inmob['nombre'];
+                if (inmobiliaria_eliminar($pdo, $id)) {
+                    actividad_registrar($pdo, 'eliminar_inmobiliaria', 'inmobiliaria', $id, 'Eliminó la inmobiliaria: ' . $nombre);
+                    flash_set('success', 'Inmobiliaria "' . $nombre . '" eliminada correctamente junto con todos sus datos.');
+                } else {
+                    flash_set('error', 'Error al eliminar la inmobiliaria. Inténtalo de nuevo.');
+                }
+            }
+        }
+        header('Location: index.php?seccion=admin-inmobiliarias');
+        exit;
+    }
 }
 
 $inmobiliarias = inmobiliarias_listar($pdo);
@@ -181,6 +199,12 @@ if (isset($_GET['editar'])) {
                             </button>
                         </form>
                         <a href="?seccion=admin-usuarios&inmobiliaria_id=<?php echo $inmob['id']; ?>" class="btn_editar_inline" title="Ver usuarios">👥</a>
+                        <form method="POST" style="display:inline" onsubmit="return confirm('⚠️ ATENCIÓN: Vas a eliminar la inmobiliaria \'<?php echo e($inmob['nombre']); ?>\' y TODOS sus datos (usuarios, clientes, propiedades, visitas, ofertas, etc.).\n\nEsta acción es IRREVERSIBLE.\n\n¿Estás seguro?');">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="eliminar_inmobiliaria" value="1">
+                            <input type="hidden" name="id" value="<?php echo $inmob['id']; ?>">
+                            <button type="submit" class="btn_editar_inline" title="Eliminar inmobiliaria" style="color:#dc2626;">🗑️</button>
+                        </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>

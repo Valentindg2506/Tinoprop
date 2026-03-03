@@ -142,50 +142,66 @@ $nombre_usuario = $_SESSION['usuario']['nombre'] ?? 'Usuario';
 		</div>
 		<?php endif; ?>
 
-		<?php if (!es_superadmin() && puede_ver_vendedor()): ?>
+		<?php
+		/* ---------- Menú unificado Vendedor / Comprador ----------
+		   Si el usuario ve ambos lados, se añade sufijo " Venta" / " Compra"
+		   para distinguir. Si solo ve uno, el menú queda limpio sin sufijo.
+		   Búsqueda Avanzada y Post-Venta se muestran UNA sola vez (son compartidos). */
+		$_ve_v  = !es_superadmin() && puede_ver_vendedor();
+		$_ve_c  = !es_superadmin() && puede_ver_comprador();
+		$_ambos = $_ve_v && $_ve_c;
+		$_sv    = $_ambos ? ' Venta'  : '';
+		$_sc    = $_ambos ? ' Compra' : '';
+		?>
+
+		<?php if ($_ve_v || $_ve_c): ?>
+		<!-- === CLIENTES (unificado) === -->
 		<div class="grupo_menu">
-			<h3 class="titulo_seccion"><span class="sidebar_titulo">Clientes - Vendedor</span></h3>
+			<h3 class="titulo_seccion"><span class="sidebar_titulo">Clientes</span></h3>
 			<ul>
-				<li><a href="?seccion=clientes-vendedor" <?php if($seccion_actual==='clientes-vendedor')echo'aria-current="page"';?>><span class="menu_icono">👥</span> <span class="sidebar_titulo">Clientes</span></a><span class="btn_star" onclick="toggle_favorito('Clientes Vend.')">☆</span></li>
-				<li><a href="?seccion=prospectos-vendedor" <?php if($seccion_actual==='prospectos-vendedor')echo'aria-current="page"';?>><span class="menu_icono">🎯</span> <span class="sidebar_titulo">Prospectos</span></a><span class="btn_star" onclick="toggle_favorito('Prospectos Vend.')">☆</span></li>
+				<?php if ($_ve_v): ?>
+				<li><a href="?seccion=clientes-vendedor" <?php if($seccion_actual==='clientes-vendedor')echo'aria-current="page"';?>><span class="menu_icono">👥</span> <span class="sidebar_titulo">Clientes<?= $_sv ?></span></a><span class="btn_star" onclick="toggle_favorito('Clientes Vend.')">☆</span></li>
+				<li><a href="?seccion=prospectos-vendedor" <?php if($seccion_actual==='prospectos-vendedor')echo'aria-current="page"';?>><span class="menu_icono">🎯</span> <span class="sidebar_titulo">Prospectos<?= $_sv ?></span></a><span class="btn_star" onclick="toggle_favorito('Prospectos Vend.')">☆</span></li>
+				<?php endif; ?>
+				<?php if ($_ve_c): ?>
+				<li><a href="?seccion=clientes-comprador" <?php if($seccion_actual==='clientes-comprador')echo'aria-current="page"';?>><span class="menu_icono">👥</span> <span class="sidebar_titulo">Clientes<?= $_sc ?></span></a><span class="btn_star" onclick="toggle_favorito('Clientes Comp.')">☆</span></li>
+				<li><a href="?seccion=prospectos-comprador" <?php if($seccion_actual==='prospectos-comprador')echo'aria-current="page"';?>><span class="menu_icono">🎯</span> <span class="sidebar_titulo">Prospectos<?= $_sc ?></span></a><span class="btn_star" onclick="toggle_favorito('Prospectos Comp.')">☆</span></li>
+				<?php endif; ?>
 			</ul>
 		</div>
-		<?php endif; ?>
 
-		<?php if (!es_superadmin() && puede_ver_comprador()): ?>
+		<!-- === INMUEBLES (unificado) === -->
 		<div class="grupo_menu">
-			<h3 class="titulo_seccion"><span class="sidebar_titulo">Clientes - Comprador</span></h3>
+			<h3 class="titulo_seccion"><span class="sidebar_titulo">Inmuebles</span></h3>
 			<ul>
-				<li><a href="?seccion=clientes-comprador" <?php if($seccion_actual==='clientes-comprador')echo'aria-current="page"';?>><span class="menu_icono">👥</span> <span class="sidebar_titulo">Clientes</span></a><span class="btn_star" onclick="toggle_favorito('Clientes Comp.')">☆</span></li>
-				<li><a href="?seccion=prospectos-comprador" <?php if($seccion_actual==='prospectos-comprador')echo'aria-current="page"';?>><span class="menu_icono">🎯</span> <span class="sidebar_titulo">Prospectos</span></a><span class="btn_star" onclick="toggle_favorito('Prospectos Comp.')">☆</span></li>
-			</ul>
-		</div>
-		<?php endif; ?>
-
-		<?php if (!es_superadmin() && puede_ver_vendedor()): ?>
-		<div class="grupo_menu">
-			<h3 class="titulo_seccion"><span class="sidebar_titulo">Inmuebles - Vendedor</span></h3>
-			<ul>
-				<li><a href="?seccion=propiedades-vendedor" <?php if($seccion_actual==='propiedades-vendedor')echo'aria-current="page"';?>><span class="menu_icono">🏠</span> <span class="sidebar_titulo">Propiedades</span></a><span class="btn_star" onclick="toggle_favorito('Propiedades')">☆</span></li>
-				<li><a href="?seccion=alquileres-vendedor" <?php if($seccion_actual==='alquileres-vendedor')echo'aria-current="page"';?>><span class="menu_icono">🔑</span> <span class="sidebar_titulo">Alquileres</span></a><span class="btn_star" onclick="toggle_favorito('Alquileres')">☆</span></li>
+				<?php if ($_ve_v): ?>
+				<li><a href="?seccion=propiedades-vendedor" <?php if($seccion_actual==='propiedades-vendedor')echo'aria-current="page"';?>><span class="menu_icono">🏠</span> <span class="sidebar_titulo">Propiedades<?= $_sv ?></span></a><span class="btn_star" onclick="toggle_favorito('Propiedades Vend.')">☆</span></li>
+				<?php endif; ?>
+				<?php if ($_ve_c): ?>
+				<li><a href="?seccion=propiedades-comprador" <?php if($seccion_actual==='propiedades-comprador')echo'aria-current="page"';?>><span class="menu_icono">🏠</span> <span class="sidebar_titulo">Propiedades<?= $_sc ?></span></a><span class="btn_star" onclick="toggle_favorito('Propiedades Comp.')">☆</span></li>
+				<?php endif; ?>
+				<?php if ($_ve_v): ?>
+				<li><a href="?seccion=alquileres-vendedor" <?php if($seccion_actual==='alquileres-vendedor')echo'aria-current="page"';?>><span class="menu_icono">🔑</span> <span class="sidebar_titulo">Alquileres<?= $_sv ?></span></a><span class="btn_star" onclick="toggle_favorito('Alquileres Vend.')">☆</span></li>
+				<?php endif; ?>
+				<?php if ($_ve_c): ?>
+				<li><a href="?seccion=alquileres-comprador" <?php if($seccion_actual==='alquileres-comprador')echo'aria-current="page"';?>><span class="menu_icono">🔑</span> <span class="sidebar_titulo">Alquileres<?= $_sc ?></span></a><span class="btn_star" onclick="toggle_favorito('Alquileres Comp.')">☆</span></li>
+				<?php endif; ?>
 				<li><a href="?seccion=busqueda-avanzada" <?php if($seccion_actual==='busqueda-avanzada')echo'aria-current="page"';?>><span class="menu_icono">🔎</span> <span class="sidebar_titulo">Búsqueda Avanzada</span></a><span class="btn_star" onclick="toggle_favorito('Búsqueda Avanzada')">☆</span></li>
-				<li><a href="?seccion=proceso-vendedor" <?php if($seccion_actual==='proceso-vendedor')echo'aria-current="page"';?>><span class="menu_icono">📋</span> <span class="sidebar_titulo">Proceso</span></a><span class="btn_star" onclick="toggle_favorito('Proceso Vendedor')">☆</span></li>
-				<li><a href="?seccion=visitas-vendedor" <?php if($seccion_actual==='visitas-vendedor')echo'aria-current="page"';?>><span class="menu_icono">🚶</span> <span class="sidebar_titulo">Visitas</span></a><span class="btn_star" onclick="toggle_favorito('Visitas Vendedor')">☆</span></li>
+				<?php if ($_ve_v): ?>
+				<li><a href="?seccion=proceso-vendedor" <?php if($seccion_actual==='proceso-vendedor')echo'aria-current="page"';?>><span class="menu_icono">📋</span> <span class="sidebar_titulo">Proceso<?= $_sv ?></span></a><span class="btn_star" onclick="toggle_favorito('Proceso Vendedor')">☆</span></li>
+				<?php endif; ?>
+				<?php if ($_ve_c): ?>
+				<li><a href="?seccion=proceso-comprador" <?php if($seccion_actual==='proceso-comprador')echo'aria-current="page"';?>><span class="menu_icono">📋</span> <span class="sidebar_titulo">Proceso<?= $_sc ?></span></a><span class="btn_star" onclick="toggle_favorito('Proceso Comprador')">☆</span></li>
+				<?php endif; ?>
+				<?php if ($_ve_v): ?>
+				<li><a href="?seccion=visitas-vendedor" <?php if($seccion_actual==='visitas-vendedor')echo'aria-current="page"';?>><span class="menu_icono">🚶</span> <span class="sidebar_titulo">Visitas<?= $_sv ?></span></a><span class="btn_star" onclick="toggle_favorito('Visitas Vendedor')">☆</span></li>
+				<?php endif; ?>
+				<?php if ($_ve_c): ?>
+				<li><a href="?seccion=visitas-comprador" <?php if($seccion_actual==='visitas-comprador')echo'aria-current="page"';?>><span class="menu_icono">🚶</span> <span class="sidebar_titulo">Visitas<?= $_sc ?></span></a><span class="btn_star" onclick="toggle_favorito('Visitas Comprador')">☆</span></li>
+				<?php endif; ?>
+				<?php if ($_ve_v): ?>
 				<li><a href="?seccion=ofertas-vendedor" <?php if($seccion_actual==='ofertas-vendedor')echo'aria-current="page"';?>><span class="menu_icono">💰</span> <span class="sidebar_titulo">Ofertas</span></a><span class="btn_star" onclick="toggle_favorito('Ofertas Vendedor')">☆</span></li>
-				<li><a href="?seccion=post-venta" <?php if($seccion_actual==='post-venta')echo'aria-current="page"';?>><span class="menu_icono">🏡</span> <span class="sidebar_titulo">Post-Venta</span></a><span class="btn_star" onclick="toggle_favorito('Post-Venta')">☆</span></li>
-			</ul>
-		</div>
-		<?php endif; ?>
-
-		<?php if (!es_superadmin() && puede_ver_comprador()): ?>
-		<div class="grupo_menu">
-			<h3 class="titulo_seccion"><span class="sidebar_titulo">Inmuebles - Comprador</span></h3>
-			<ul>
-				<li><a href="?seccion=propiedades-comprador" <?php if($seccion_actual==='propiedades-comprador')echo'aria-current="page"';?>><span class="menu_icono">🏠</span> <span class="sidebar_titulo">Propiedades</span></a><span class="btn_star" onclick="toggle_favorito('Propiedades')">☆</span></li>
-				<li><a href="?seccion=alquileres-comprador" <?php if($seccion_actual==='alquileres-comprador')echo'aria-current="page"';?>><span class="menu_icono">🔑</span> <span class="sidebar_titulo">Alquileres</span></a><span class="btn_star" onclick="toggle_favorito('Alquileres')">☆</span></li>
-				<li><a href="?seccion=busqueda-avanzada" <?php if($seccion_actual==='busqueda-avanzada')echo'aria-current="page"';?>><span class="menu_icono">🔎</span> <span class="sidebar_titulo">Búsqueda Avanzada</span></a><span class="btn_star" onclick="toggle_favorito('Búsqueda Avanzada')">☆</span></li>
-				<li><a href="?seccion=proceso-comprador" <?php if($seccion_actual==='proceso-comprador')echo'aria-current="page"';?>><span class="menu_icono">📋</span> <span class="sidebar_titulo">Proceso</span></a><span class="btn_star" onclick="toggle_favorito('Proceso Comprador')">☆</span></li>
-				<li><a href="?seccion=visitas-comprador" <?php if($seccion_actual==='visitas-comprador')echo'aria-current="page"';?>><span class="menu_icono">🚶</span> <span class="sidebar_titulo">Visitas</span></a><span class="btn_star" onclick="toggle_favorito('Visitas Comprador')">☆</span></li>
+				<?php endif; ?>
 				<li><a href="?seccion=post-venta" <?php if($seccion_actual==='post-venta')echo'aria-current="page"';?>><span class="menu_icono">🏡</span> <span class="sidebar_titulo">Post-Venta</span></a><span class="btn_star" onclick="toggle_favorito('Post-Venta')">☆</span></li>
 			</ul>
 		</div>

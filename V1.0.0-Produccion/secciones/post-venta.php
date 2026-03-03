@@ -72,9 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['eliminar_seguimiento'])) {
         $pv_id = (int) ($_POST['pv_id'] ?? 0);
-        if ($pv_id > 0) {
-            $pdo->prepare('DELETE FROM post_venta WHERE id = :id AND usuario_id = :uid' . sql_iid())->execute(['id' => $pv_id, 'uid' => $usuario_id] + sql_iid_params());
+        if ($pv_id > 0 && tiene_nivel('supervisor')) {
+            $pdo->prepare('DELETE FROM post_venta WHERE id = :id' . sql_iid())->execute(['id' => $pv_id] + sql_iid_params());
             flash_set('success', 'Seguimiento eliminado.');
+        } elseif (!tiene_nivel('supervisor')) {
+            flash_set('error', 'Solo supervisores o superiores pueden eliminar seguimientos.');
         }
     }
 
@@ -164,11 +166,13 @@ $clientes_lista = $stmt->fetchAll();
                         <button type="submit" name="mover_etapa" class="btn_chico btn_guardar" title="Avanzar">▶ Avanzar</button>
                     </form>
                     <?php endif; ?>
+                    <?php if (tiene_nivel('supervisor')): ?>
                     <form method="POST" style="display:inline" data-confirm="¿Eliminar este seguimiento?">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="pv_id" value="<?php echo $item['id']; ?>">
                         <button type="submit" name="eliminar_seguimiento" class="btn_chico btn_peligro" title="Eliminar">🗑️</button>
                     </form>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php endforeach; ?>

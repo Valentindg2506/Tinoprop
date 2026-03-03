@@ -13,3 +13,16 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+
+# Documentos y subidas de usuarios
+uploads/
+documentos/
+
+# Logs
+logs/
+*.log
+
+# Cache de Python (si usas scripts en Python)
+__pycache__/
+*.pyc
+*.pyo
