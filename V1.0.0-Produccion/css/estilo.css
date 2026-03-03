@@ -7002,9 +7002,13 @@ select:disabled {
     flex-direction: column;
     align-items: center;
     gap: .8rem;
+    /* Sobrescribir estilos genéricos de body.login-page form */
+    background: transparent !important;
+    height: auto !important;
+    padding: 1rem 0 !important;
 }
 
-/* Dark mode — aceptar-terminos */
+/* Dark mode — aceptar-terminos (clase explícita) */
 .tema-oscuro .terminos_container,
 body.login-page-dark .terminos_container {
     background: #1e293b;
@@ -7019,6 +7023,35 @@ body.login-page-dark .terminos_scroll {
 }
 body.login-page-dark .terminos_scroll h3 { color: #e2e8f0; }
 body.login-page-dark .terminos_version { color: #64748b; }
+
+/* Dark mode — aceptar-terminos (preferencia del SO) */
+@media (prefers-color-scheme: dark) {
+    body.login-page {
+        background-image: linear-gradient(to right, #0f172a, #1e293b);
+    }
+    body.login-page .terminos_container {
+        background: #1e293b;
+        color: #e2e8f0;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+    }
+    body.login-page .terminos_subtitle { color: #94a3b8; }
+    body.login-page .terminos_scroll {
+        background: #0f172a;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+    body.login-page .terminos_scroll h3 { color: #e2e8f0; }
+    body.login-page .terminos_version { color: #64748b; }
+    body.login-page .legal_accept_wrap { color: #94a3b8; }
+    body.login-page .legal_accept_wrap a { color: #60a5fa; }
+    body.login-page .terminos_actions {
+        background: transparent !important;
+    }
+    body.login-page button {
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+    }
+    body.login-page .error-text { color: #f87171; }
+}
 
 /* Responsive — aceptar-terminos */
 @media (max-width: 576px) {
