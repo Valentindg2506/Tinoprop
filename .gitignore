@@ -1,9 +1,9 @@
-# Dependencias de composer (si usas en el futuro)
+# Dependencias de composer
 /vendor/
 
-# Archivos de entorno y configuración (IMPORTANTE: nunca subir contraseñas)
+# Archivos de entorno y configuración
 config.php
-.env
+/.env/
 db_connect.php
 
 # Sistema
@@ -26,3 +26,6 @@ logs/
 __pycache__/
 *.pyc
 *.pyo
+
+/venv/
+/V1.0.3-Arrego de errores/scripts/venv
