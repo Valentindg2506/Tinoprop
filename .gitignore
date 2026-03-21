@@ -28,4 +28,5 @@ __pycache__/
 *.pyo
 
 /venv/
-/V1.0.3-Arrego de errores/scripts/venv
+/V1.0.3-Arreglo de errores/scripts/venv
+/V0.0.22-Idioma/scripts/__pycache__
