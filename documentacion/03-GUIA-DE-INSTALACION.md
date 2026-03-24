@@ -1,7 +1,7 @@
 # TinoProp — Guía de Instalación y Despliegue
 
-**Versión:** 1.0.0 — Producción  
-**Última actualización:** 3 de marzo de 2026
+**Versión:** 1.0.3
+**Última actualización:** 24 de marzo de 2026
 
 ---
 
@@ -47,13 +47,13 @@ sudo systemctl restart apache2
 
 ### 2.1 Descargar los archivos
 
-Copia el contenido de `V1.0.0-Produccion/` en el directorio raíz del servidor web:
+Copia el contenido de `V1.0.3-Arreglo de errores/` en el directorio raíz del servidor web:
 
 ```bash
 # Ejemplo: en /var/www/html/tinoprop
 sudo mkdir -p /var/www/html/tinoprop
-sudo cp -r V1.0.0-Produccion/* /var/www/html/tinoprop/
-sudo cp V1.0.0-Produccion/.htaccess /var/www/html/tinoprop/
+sudo cp -r "V1.0.3-Arreglo de errores/"* /var/www/html/tinoprop/
+sudo cp "V1.0.3-Arreglo de errores/"*.htaccess /var/www/html/tinoprop/
 ```
 
 ### 2.2 Crear la base de datos
@@ -128,7 +128,26 @@ Contenido:
 ```apache
 <VirtualHost *:80>
     ServerName tinoprop.tudominio.com
+    # Las peticiones HTTP son redirigidas a HTTPS por .htaccess (mod_rewrite)
     DocumentRoot /var/www/html/tinoprop
+
+    <Directory /var/www/html/tinoprop>
+        AllowOverride All
+        Require all granted
+        Options -Indexes
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/tinoprop_error.log
+    CustomLog ${APACHE_LOG_DIR}/tinoprop_access.log combined
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName tinoprop.tudominio.com
+    DocumentRoot /var/www/html/tinoprop
+
+    SSLEngine on
+    SSLCertificateFile    /etc/letsencrypt/live/tinoprop.tudominio.com/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/tinoprop.tudominio.com/privkey.pem
 
     <Directory /var/www/html/tinoprop>
         AllowOverride All
@@ -149,8 +168,8 @@ sudo systemctl reload apache2
 
 ### 2.6 Verificar la instalación
 
-1. Abre el navegador y accede a `http://tinoprop.tudominio.com`
-2. Deberías ver la pantalla de login
+1. Abre el navegador y accede a `https://tinoprop.tudominio.com`
+2. Deberías ver la pantalla de login (si accedes por HTTP serás redirigido automáticamente a HTTPS)
 3. Credenciales por defecto del SuperAdmin:
    - **Email:** `admin@tinoprop.com`
    - **Contraseña:** `Admin1234!`
@@ -162,7 +181,7 @@ sudo systemctl reload apache2
 
 ## 3. Configuración SSL (Producción)
 
-Para entornos de producción es **obligatorio** usar HTTPS:
+Para entornos de producción es **obligatorio** usar HTTPS. El `.htaccess` redirige automáticamente HTTP→HTTPS y envía cabecera HSTS, pero **necesitas un certificado SSL válido** en el servidor:
 
 ```bash
 # Instalar Certbot (Let's Encrypt)
@@ -236,7 +255,7 @@ mysqldump -u root -p tinoprop > backup_tinoprop_$(date +%Y%m%d).sql
 cp -r /var/www/html/tinoprop /var/www/html/tinoprop_backup_$(date +%Y%m%d)
 
 # 3. Copiar los nuevos archivos (NO sobrescribir .env ni storage/)
-rsync -av --exclude='.env' --exclude='storage/' --exclude='logs/' V1.0.0-Nueva/* /var/www/html/tinoprop/
+rsync -av --exclude='.env' --exclude='storage/' --exclude='logs/' "V1.0.3-Arreglo de errores/"* /var/www/html/tinoprop/
 
 # 4. Ejecutar migraciones SQL si existen
 mysql -u root -p tinoprop < nueva_migracion.sql

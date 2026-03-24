@@ -1,7 +1,7 @@
 # TinoProp — Documentación Técnica de Arquitectura
 
-**Versión:** 1.0.0 — Producción  
-**Última actualización:** 3 de marzo de 2026
+**Versión:** 1.0.3
+**Última actualización:** 24 de marzo de 2026
 
 ---
 
@@ -25,7 +25,7 @@ TinoProp es un **CRM inmobiliario multi-tenant** desarrollado en PHP vanilla (si
 ## 2. Estructura de Archivos
 
 ```
-V1.0.0-Produccion/
+V1.0.3-Arreglo de errores/
 ├── .env                    ← Variables de entorno (no versionado)
 ├── .env.example            ← Plantilla de variables de entorno
 ├── .htaccess               ← Seguridad HTTP y bloqueo de archivos sensibles
@@ -37,7 +37,7 @@ V1.0.0-Produccion/
 │
 ├── inc/                    ← Lógica de negocio
 │   ├── bootstrap.php       ← Inicialización: sesiones, seguridad, .env, idioma
-│   ├── helpers.php         ← ~100 funciones: CRUD, roles, validación, utilidades (3914 líneas)
+│   ├── helpers.php         ← ~100 funciones: CRUD, roles, validación, utilidades (2263 líneas)
 │   ├── db.php              ← Conexión PDO a MySQL
 │   └── idioma.php          ← Sistema de internacionalización (i18n)
 │
@@ -208,12 +208,14 @@ Se incluyen **alias de compatibilidad** (`--bg-card`, `--text-secondary`, etc.) 
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
 - `X-XSS-Protection: 1; mode=block`
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains` — fuerza HTTPS durante 1 año
+- Redirección 301 de HTTP a HTTPS (`.htaccess` mod_rewrite)
 
 ### Protecciones implementadas
 
 | Protección | Implementación |
 |-----------|---------------|
-| **SQL Injection** | PDO con sentencias preparadas (`?` y `:param`) |
+| **SQL Injection** | PDO con sentencias preparadas nativas (`EMULATE_PREPARES=false`) |
 | **XSS** | Función `e()` (escape HTML) en toda salida |
 | **CSRF** | Token por sesión con `csrf_token()` / `csrf_verify()` |
 | **Brute Force** | Rate limiting: max 5 intentos en 15 min, bloqueo 15 min |

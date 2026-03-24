@@ -1,7 +1,7 @@
 # TinoProp — Referencia de API y Funciones
 
-**Versión:** 1.0.0 — Producción  
-**Última actualización:** 3 de marzo de 2026
+**Versión:** 1.0.3
+**Última actualización:** 24 de marzo de 2026
 
 ---
 
@@ -237,7 +237,7 @@ Mismos campos que `crear` + `id` (obligatorio) + `estado` (opcional, default: `"
 
 ## Parte II — Funciones de `helpers.php`
 
-El archivo `inc/helpers.php` contiene **~100 funciones** organizadas en 14 grupos.
+El archivo `inc/helpers.php` contiene **~100 funciones** organizadas en 22 grupos (2263 líneas).
 
 ---
 
@@ -557,7 +557,7 @@ El archivo `inc/helpers.php` contiene **~100 funciones** organizadas en 14 grupo
 | Archivo | Descripción |
 |---------|-------------|
 | `bootstrap.php` | Arranque: session, .env, PDO, auto-crear tablas, verificar login |
-| `helpers.php` | Todas las funciones de negocio (~3900 líneas) |
+| `helpers.php` | Todas las funciones de negocio (2263 líneas) |
 
 ### `css/`
 
@@ -569,5 +569,4 @@ El archivo `inc/helpers.php` contiene **~100 funciones** organizadas en 14 grupo
 
 | Archivo | Descripción |
 |---------|-------------|
-| `app.js` | Lógica frontend: sidebar, modales, drag&drop, búsqueda, notificaciones |
-| `pdf-generator.js` | Generación de PDFs desde plantillas en cliente |
+| `script.js` | Lógica frontend: sidebar, modales, drag&drop, búsqueda, notificaciones, generación de PDFs |

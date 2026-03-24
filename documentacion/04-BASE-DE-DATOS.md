@@ -1,7 +1,7 @@
 # TinoProp — Documentación de Base de Datos
 
-**Versión:** 1.0.0 — Producción (esquema V0.0.31)  
-**Última actualización:** 3 de marzo de 2026  
+**Versión:** 1.0.3
+**Última actualización:** 24 de marzo de 2026
 **Motor:** MySQL 8.0 / MariaDB 10.6 — InnoDB — utf8mb4_unicode_ci
 
 ---
@@ -346,14 +346,19 @@ login_intentos (independiente — rate limiting)
 
 #### `login_intentos` — Rate limiting
 
+Registra **un evento por cada intento fallido** (log de eventos, no contador).
+El sistema cuenta cuántos eventos existen en los últimos 15 minutos para determinar el bloqueo.
+
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `id` | INT UNSIGNED AUTO_INCREMENT | PK |
+| `id` | BIGINT UNSIGNED AUTO_INCREMENT | PK |
 | `ip` | VARCHAR(45) | IP del intento |
-| `email` | VARCHAR(150) | Email usado |
-| `intentos` | INT | Contador de intentos fallidos |
-| `ultimo_intento` | TIMESTAMP | Fecha del último intento |
-| `bloqueado_hasta` | TIMESTAMP NULL | Fecha de desbloqueo |
+| `email` | VARCHAR(255) | Email usado |
+| `created_at` | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | Fecha/hora del intento |
+
+**Índices:** `idx_li_ip (ip)`, `idx_li_email (email)`, `idx_li_created (created_at)`
+
+> Lógica: si hay ≥ 5 registros de la misma IP o email en los últimos 900 segundos → bloqueo durante 900 segundos adicionales.
 
 #### `scraped_propiedades` — Datos importados de portales
 

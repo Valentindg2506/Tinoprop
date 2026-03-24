@@ -104,9 +104,10 @@ Jerarquía de **7 roles** con permisos acumulativos:
 - Contraseñas temporales con cambio obligatorio en primer login
 - Protección **CSRF** con tokens por formulario
 - Escape **XSS** en toda la salida HTML
-- **PDO** con prepared statements (prevención SQL Injection)
+- **PDO** con prepared statements nativos (prevención SQL Injection)
 - **Rate limiting** contra fuerza bruta
-- Cabeceras HTTP de seguridad (X-Frame-Options, CSP, etc.)
+- Cabeceras HTTP de seguridad (X-Frame-Options, X-Content-Type-Options, HSTS, etc.)
+- Redirección forzada a **HTTPS** + cabecera **HSTS** (max-age=1 año)
 - Protección de directorios sensibles y archivos de configuración
 - Términos y Condiciones versionados con aceptación obligatoria
 
@@ -148,6 +149,9 @@ El proyecto ha evolucionado a través de **32 versiones**:
 | V0.0.30 | Pre-producción |
 | V0.0.31 | Documentación del código |
 | **V1.0.0** | **🚀 Producción** |
+| V1.0.1 | Correcciones post-producción |
+| V1.0.2 | Arreglo de errores |
+| **V1.0.3** | **Arreglo de errores + correcciones de seguridad** |
 
 ---
 

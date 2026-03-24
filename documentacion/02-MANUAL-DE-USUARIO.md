@@ -1,7 +1,7 @@
 # TinoProp — Manual de Usuario
 
-**Versión:** 1.0.0 — Producción  
-**Última actualización:** 3 de marzo de 2026
+**Versión:** 1.0.3
+**Última actualización:** 24 de marzo de 2026
 
 ---
 
