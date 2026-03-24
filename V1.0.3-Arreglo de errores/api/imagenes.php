@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 try {
     $action = $_GET['action'] ?? $_POST['action'] ?? null;
     if (!$action && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        $rawInput = stream_get_contents(fopen('php://input', 'r'), 1024 * 1024);
+        $rawInput = file_get_contents('php://input', false, null, 0, 1024 * 1024);
         $json = $rawInput ? (json_decode($rawInput, true) ?? []) : [];
         $action = $json['action'] ?? null;
     }
