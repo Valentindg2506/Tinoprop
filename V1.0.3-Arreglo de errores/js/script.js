@@ -1,14 +1,5 @@
 let favoritos = [];
 const STORAGE_KEY_FAVORITOS = 'tinoprop.menu.favoritos';
-/* Helper global: muestra un mensaje de error temporal en pantalla */
-function mostrarErrorUI(mensaje) {
-    const div = document.createElement('div');
-    div.className = 'alerta alerta_error';
-    div.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;max-width:360px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
-    div.textContent = mensaje;
-    document.body.appendChild(div);
-    setTimeout(() => div.remove(), 4000);
-}
 /* Helper global: obtiene el token CSRF desde el meta tag para peticiones fetch */
 function getCsrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');
@@ -353,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cuerpoOrigen.appendChild(tarjetaDestino);
                 actualizarContadores();
             }
-            mostrarErrorUI(error.message || 'No se pudo actualizar el estado del prospecto.');
+            alert(error.message || 'No se pudo actualizar el estado del prospecto.');
         }
     });
     const actualizarModoKanban = () => {

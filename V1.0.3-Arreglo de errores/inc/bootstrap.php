@@ -51,7 +51,6 @@ ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_samesite', 'Strict');
 if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
     ini_set('session.cookie_secure', 1);
-    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 }
 session_start();
 require_once __DIR__ . '/db.php';
