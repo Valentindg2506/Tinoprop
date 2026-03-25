@@ -67,31 +67,6 @@ CREATE TABLE `clientes` (
   `usuario_id` int UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `entidad_etiquetas`
---
-
-CREATE TABLE `entidad_etiquetas` (
-  `id` int UNSIGNED NOT NULL,
-  `entidad_tipo` varchar(30) NOT NULL,
-  `entidad_id` int UNSIGNED NOT NULL,
-  `etiqueta_id` int UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `etiquetas`
---
-
-CREATE TABLE `etiquetas` (
-  `id` int UNSIGNED NOT NULL,
-  `nombre` varchar(50) NOT NULL,
-  `color` varchar(20) NOT NULL DEFAULT '#3b82f6',
-  `usuario_id` int UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
