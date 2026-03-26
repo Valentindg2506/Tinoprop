@@ -1244,6 +1244,24 @@ function actividad_asegurar_tabla(PDO $pdo): void
     }
     $ok = true;
 }
+function actividad_escribir_jsonl(int $uid, string $nombre, int $iid, string $accion, string $entidad, ?int $entidad_id, string $descripcion, array $datos_extra, ?string $ip): void
+{
+    $entrada = [
+        'ts'              => date('c'),
+        'usuario_id'      => $uid,
+        'usuario_nombre'  => $nombre,
+        'inmobiliaria_id' => $iid,
+        'accion'          => $accion,
+        'entidad'         => $entidad,
+        'entidad_id'      => $entidad_id,
+        'descripcion'     => $descripcion,
+        'datos_extra'     => $datos_extra ?: new stdClass(),
+        'ip'              => $ip,
+    ];
+    $linea = json_encode($entrada, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
+    $ruta  = dirname(__DIR__) . '/logs/actividad_' . date('Y-m-d') . '.jsonl';
+    @file_put_contents($ruta, $linea, FILE_APPEND | LOCK_EX);
+}
 function actividad_registrar(PDO $pdo, string $accion, string $entidad, ?int $entidad_id = null, string $descripcion = '', array $datos_extra = []): void
 {
     $uid = (int) ($_SESSION['usuario']['id'] ?? 0);
@@ -1251,6 +1269,8 @@ function actividad_registrar(PDO $pdo, string $accion, string $entidad, ?int $en
     if ($uid <= 0) {
         return;
     }
+    $ip  = $_SERVER['REMOTE_ADDR'] ?? null;
+    $iid = usuario_inmobiliaria_id();
     actividad_asegurar_tabla($pdo);
     $stmt = $pdo->prepare(
         'INSERT INTO actividad_log (usuario_id, usuario_nombre, accion, entidad, entidad_id, descripcion, datos_extra, ip, inmobiliaria_id)
@@ -1260,9 +1280,10 @@ function actividad_registrar(PDO $pdo, string $accion, string $entidad, ?int $en
         'uid' => $uid, 'nombre' => $nombre, 'accion' => $accion,
         'entidad' => $entidad, 'eid' => $entidad_id, 'desc' => $descripcion,
         'datos' => !empty($datos_extra) ? json_encode($datos_extra) : null,
-        'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
-        'iid' => usuario_inmobiliaria_id(),
+        'ip' => $ip,
+        'iid' => $iid,
     ]);
+    actividad_escribir_jsonl($uid, $nombre, $iid, $accion, $entidad, $entidad_id, $descripcion, $datos_extra, $ip);
 }
 function actividad_listar(PDO $pdo, int $limite = 20, int $offset = 0): array
 {
