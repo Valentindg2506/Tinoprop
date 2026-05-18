@@ -3,7 +3,7 @@
 
 # Archivos de entorno y configuración
 config.php
-/.env/
+.env
 db_connect.php
 
 # Sistema
@@ -27,6 +27,6 @@ __pycache__/
 *.pyc
 *.pyo
 
-/venv/
+.env
 /V1.0.3-Arreglo de errores/scripts/venv
 /V0.0.22-Idioma/scripts/__pycache__
