@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CAS">
+<meta name="theme-color" content="#6366f1">
+<title>CAS Real Estate</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%236366f1'/><text x='50' y='68' font-size='44' text-anchor='middle' fill='white' font-weight='bold' font-family='sans-serif'>CAS</text></svg>">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="cas-root">
+
+  <!-- ── Offline banner ──────────────────────────────────── -->
+  <div id="offline-banner" class="hidden">📵 Sin conexión — mostrando datos locales</div>
+
+  <!-- ── Sync badge ──────────────────────────────────────── -->
+  <div id="sync-badge" class="hidden">⏳ Sincronizando...</div>
+
+  <!-- ── Login ───────────────────────────────────────────── -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="login-logo">CAS</div>
+      <h1 class="login-title">CAS Real Estate</h1>
+      <p class="login-sub">Inicia sesión para continuar</p>
+      <div class="field">
+        <label>Usuario</label>
+        <input type="text" id="login-user" placeholder="mariano" autocomplete="username" inputmode="email">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="login-pass" autocomplete="current-password">
+      </div>
+      <div id="login-err" class="login-err hidden"></div>
+      <button id="login-btn" class="btn-primary" style="margin-top:8px">Entrar →</button>
+    </div>
+  </div>
+
+  <!-- ── Main app ─────────────────────────────────────────── -->
+  <div id="main-app" class="hidden">
+
+    <!-- Section switcher -->
+    <div id="section-switcher">
+      <button id="tab-captacion"   class="sec-tab active">👥 Inquilinos</button>
+      <button id="tab-seguimiento" class="sec-tab">🏠 Propietarios</button>
+      <button id="btn-logout"      class="logout-btn">Salir</button>
+    </div>
+
+    <!-- Section panes -->
+    <div id="sec-captacion"   class="section-pane"></div>
+    <div id="sec-seguimiento" class="section-pane hidden"></div>
+
+  </div>
+
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/captacion.js"></script>
+<script src="js/seguimiento.js"></script>
+
+<script>
+(function () {
+    'use strict';
+
+    const loginScreen    = document.getElementById('login-screen');
+    const mainApp        = document.getElementById('main-app');
+    const loginUser      = document.getElementById('login-user');
+    const loginPass      = document.getElementById('login-pass');
+    const loginBtn       = document.getElementById('login-btn');
+    const loginErr       = document.getElementById('login-err');
+    const tabCaptacion   = document.getElementById('tab-captacion');
+    const tabSeguimiento = document.getElementById('tab-seguimiento');
+    const btnLogout      = document.getElementById('btn-logout');
+    const secCaptacion   = document.getElementById('sec-captacion');
+    const secSeguimiento = document.getElementById('sec-seguimiento');
+    const offlineBanner  = document.getElementById('offline-banner');
+    const syncBadge      = document.getElementById('sync-badge');
+
+    let captacionInited   = false;
+    let seguimientoInited = false;
+
+    // ── Offline / online ──────────────────────────────────
+    function updateOnlineStatus() {
+        offlineBanner.classList.toggle('hidden', navigator.onLine);
+    }
+    window.addEventListener('online',  updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+
+    // Queue sync badge
+    document.addEventListener('cas:synced', () => {
+        syncBadge.classList.add('hidden');
+    });
+
+    // ── Show / hide screens ───────────────────────────────
+    function showApp() {
+        loginScreen.classList.add('hidden');
+        mainApp.classList.remove('hidden');
+        if (!captacionInited) {
+            captacionInited = true;
+            Captacion.init(secCaptacion);
+        }
+    }
+
+    function showLogin() {
+        loginScreen.classList.remove('hidden');
+        mainApp.classList.add('hidden');
+        loginUser.value = '';
+        loginPass.value = '';
+        loginErr.classList.add('hidden');
+    }
+
+    function showSection(name) {
+        const isCap = name === 'captacion';
+        secCaptacion.classList.toggle('hidden', !isCap);
+        secSeguimiento.classList.toggle('hidden', isCap);
+        tabCaptacion.classList.toggle('active', isCap);
+        tabSeguimiento.classList.toggle('active', !isCap);
+
+        if (!isCap && !seguimientoInited) {
+            seguimientoInited = true;
+            Seguimiento.init(secSeguimiento);
+        }
+    }
+
+    // ── Logout if unauthorized ────────────────────────────
+    document.addEventListener('cas:unauthorized', () => {
+        showLogin();
+        loginErr.textContent = 'Sesión expirada. Vuelve a iniciar sesión.';
+        loginErr.classList.remove('hidden');
+    });
+
+    // ── Check session on load ─────────────────────────────
+    if (CasAPI.isLoggedIn()) {
+        showApp();
+    } else {
+        showLogin();
+    }
+
+    // ── Login ─────────────────────────────────────────────
+    loginBtn.addEventListener('click', async () => {
+        const usuario  = loginUser.value.trim();
+        const password = loginPass.value;
+        if (!usuario || !password) {
+            loginErr.textContent = 'Introduce usuario y contraseña.';
+            loginErr.classList.remove('hidden');
+            return;
+        }
+        loginBtn.disabled    = true;
+        loginBtn.textContent = 'Entrando...';
+        loginErr.classList.add('hidden');
+        try {
+            await CasAPI.login(usuario, password);
+            captacionInited   = false;
+            seguimientoInited = false;
+            secCaptacion.innerHTML   = '';
+            secSeguimiento.innerHTML = '';
+            showApp();
+        } catch (err) {
+            const msj = err.message || String(err);
+            alert("Detalle del error:\n" + msj);
+            loginErr.textContent = msj;
+            loginErr.classList.remove('hidden');
+        } finally {
+            loginBtn.disabled    = false;
+            loginBtn.textContent = 'Entrar →';
+        }
+    });
+
+    loginPass.addEventListener('keydown', e => { if (e.key === 'Enter') loginBtn.click(); });
+    loginUser.addEventListener('keydown', e => { if (e.key === 'Enter') loginPass.focus(); });
+
+    // ── Section tabs ──────────────────────────────────────
+    tabCaptacion.addEventListener('click',   () => showSection('captacion'));
+    tabSeguimiento.addEventListener('click', () => showSection('seguimiento'));
+
+    // ── Logout ────────────────────────────────────────────
+    btnLogout.addEventListener('click', async () => {
+        if (!confirm('¿Cerrar sesión?')) return;
+        await CasAPI.logout();
+        captacionInited   = false;
+        seguimientoInited = false;
+        secCaptacion.innerHTML   = '';
+        secSeguimiento.innerHTML = '';
+        showLogin();
+    });
+
+    // ── Service Worker ────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js')
+            .catch(err => console.warn('SW registration failed:', err));
+    }
+})();
+</script>
+
+</body>
+</html>
